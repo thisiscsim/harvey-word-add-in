@@ -1,4 +1,4 @@
-export type WorkflowType = 'Draft' | 'Output' | 'Review';
+export type WorkflowType = 'Draft' | 'Output';
 
 export interface Workflow {
   id: number;
@@ -9,10 +9,10 @@ export interface Workflow {
 }
 
 // Curated unique lists (no duplicates). Counts per request:
-// Draft: 14, Output: 15, Review: 13
+// Draft: 14, Output: 15
 
 export const draftItems: Workflow[] = [
-  { id: 1, title: 'Draft a client alert', type: 'Draft', steps: '5 steps', description: 'Create professional client communications' },
+  { id: 1, title: 'Draft an S-1 Filing', type: 'Draft', steps: '5 steps', description: 'Create SEC registration statement for IPO' },
   { id: 2, title: 'Draft board resolutions', type: 'Draft', steps: '6 steps', description: 'Create corporate board meeting resolutions' },
   { id: 3, title: 'Draft employment agreements', type: 'Draft', steps: '7 steps', description: 'Create executive employment contracts' },
   { id: 4, title: 'Draft legal opinion memorandum', type: 'Draft', steps: '8 steps', description: 'Prepare detailed legal analysis memo' },
@@ -44,22 +44,8 @@ export const outputItems: Workflow[] = [
   { id: 114, title: 'Generate correspondence log', type: 'Output', steps: '2 steps', description: 'Create external communications log' },
 ];
 
-export const reviewItems: Workflow[] = [
-  { id: 201, title: 'Extract chronology of key events', type: 'Review', steps: '2 steps', description: 'Identify and organize important events' },
-  { id: 202, title: 'Review and compare contract clauses', type: 'Review', steps: '3 steps', description: 'Compare contract provisions across documents' },
-  { id: 203, title: 'Analyze regulatory compliance', type: 'Review', steps: '5 steps', description: 'Review compliance with applicable regulations' },
-  { id: 204, title: 'Extract litigation history', type: 'Review', steps: '3 steps', description: 'Compile litigation and dispute records' },
-  { id: 205, title: 'Review due diligence findings', type: 'Review', steps: '4 steps', description: 'Analyze and summarize diligence results' },
-  { id: 206, title: 'Analyze financial statements', type: 'Review', steps: '6 steps', description: 'Review and summarize financial data' },
-  { id: 207, title: 'Extract warranty provisions', type: 'Review', steps: '3 steps', description: 'Identify and compile warranty terms' },
-  { id: 208, title: 'Extract termination provisions', type: 'Review', steps: '3 steps', description: 'Collect termination rights and notice' },
-  { id: 209, title: 'Extract assignment clauses', type: 'Review', steps: '3 steps', description: 'Collect assignment and novation terms' },
-  { id: 210, title: 'Extract indemnity provisions', type: 'Review', steps: '3 steps', description: 'Identify indemnity scope and caps' },
-  { id: 211, title: 'Review vendor contracts for risk', type: 'Review', steps: '4 steps', description: 'Flag key vendor risks' },
-  { id: 212, title: 'Review privacy clauses', type: 'Review', steps: '3 steps', description: 'Identify data protection obligations' },
-  { id: 213, title: 'Review signature blocks', type: 'Review', steps: '2 steps', description: 'Check authorities and entities' },
-];
 
-export const workflows: Workflow[] = [...draftItems, ...outputItems, ...reviewItems];
+
+export const workflows: Workflow[] = [...draftItems, ...outputItems];
 
 

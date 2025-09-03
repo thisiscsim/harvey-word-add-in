@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown } from "lucide-react";
+import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, CloudUpload } from "lucide-react";
 import SourcesDrawer from "@/components/sources-drawer";
 import ShareThreadDialog from "@/components/share-thread-dialog";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
@@ -18,17 +18,17 @@ import ExportThreadDialog from "@/components/export-thread-dialog";
 import ExportReviewDialog from "@/components/export-review-dialog";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, useSidebar } from "@/components/ui/sidebar";
-import ReviewTableArtifactCard from "@/components/review-table-artifact-card";
+import ArtifactCard from "@/components/artifact-card";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import DraftArtifactPanel from "@/components/draft-artifact-panel";
-import ReviewArtifactPanel from "@/components/review-artifact-panel";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
 import FileManagementDialog from "@/components/file-management-dialog";
 import ThinkingState from "@/components/thinking-state";
+import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
 
 type Message = {
   role: 'user' | 'assistant';
@@ -37,7 +37,7 @@ type Message = {
   artifactData?: {
     title: string;
     subtitle: string;
-    variant?: 'review' | 'draft'; // Determines which panel to open
+    variant?: 'draft'; // Determines which panel to open
   };
   isLoading?: boolean;
   thinkingContent?: ReturnType<typeof getThinkingContent>;
@@ -47,6 +47,10 @@ type Message = {
     showAdditionalText: boolean;
     visibleChildStates: number;
   };
+  isWorkflowResponse?: boolean;
+  workflowTitle?: string;
+  isFirstWorkflowMessage?: boolean;
+  showThinking?: boolean;
 };
 
 // Shared animation configuration for consistency - refined timing
@@ -56,12 +60,12 @@ const PANEL_ANIMATION = {
 };
 
 // Basic default content for the expandable thinking state per response type
-function getThinkingContent(variant: 'analysis' | 'draft' | 'review'): {
+function getThinkingContent(variant: 'analysis' | 'draft'): {
   summary: string;
   bullets: string[];
   additionalText?: string;
   childStates?: Array<{
-    variant: 'analysis' | 'draft' | 'review';
+    variant: 'analysis' | 'draft';
     title: string;
     summary?: string;
     bullets?: string[];
@@ -77,15 +81,7 @@ function getThinkingContent(variant: 'analysis' | 'draft' | 'review'): {
           'Outline sections and key arguments'
         ]
       };
-    case 'review':
-      return {
-        summary: 'Parsing materials and selecting fields for a concise comparison.',
-        bullets: [
-          'Locate documents and parse key terms',
-          'Normalize entities and dates',
-          'Populate rows and verify data consistency'
-        ]
-      };
+
     default:
       return {
         summary: 'The user wants me to recreate a morphing dialog component using shadcn dialog as the foundation. This sounds like they want a dialog that has smooth morphing animations - likely expanding from a trigger element or morphing between different states/sizes.',
@@ -148,6 +144,7 @@ export default function AssistantChatPage({
   const { chatId } = use(params);
   const searchParams = useSearchParams();
   const initialMessage = searchParams.get('initialMessage');
+  const isWorkflow = searchParams.get('isWorkflow') === 'true';
   const router = useRouter();
   
   // Sidebar control hook
@@ -183,15 +180,14 @@ export default function AssistantChatPage({
   const [exportReviewDialogOpen, setExportReviewDialogOpen] = useState(false);
   const [artifactPanelOpen, setArtifactPanelOpen] = useState(false);
   const [draftArtifactPanelOpen, setDraftArtifactPanelOpen] = useState(false);
-  const [reviewArtifactPanelOpen, setReviewArtifactPanelOpen] = useState(false);
   const [selectedArtifact, setSelectedArtifact] = useState<{ title: string; subtitle: string } | null>(null);
   const [selectedDraftArtifact, setSelectedDraftArtifact] = useState<{ title: string; subtitle: string } | null>(null);
-  const [selectedReviewArtifact, setSelectedReviewArtifact] = useState<{ title: string; subtitle: string } | null>(null);
   
   // New unified artifact panel state
   const [unifiedArtifactPanelOpen, setUnifiedArtifactPanelOpen] = useState(false);
-  const [currentArtifactType, setCurrentArtifactType] = useState<'draft' | 'review' | null>(null);
+  const [currentArtifactType, setCurrentArtifactType] = useState<'draft' | null>(null);
   const [isFileManagementOpen, setIsFileManagementOpen] = useState(false);
+  const [isiManagePickerOpen, setIsiManagePickerOpen] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const hasProcessedInitialMessageRef = useRef(false);
@@ -212,7 +208,7 @@ export default function AssistantChatPage({
   const hasAutoCollapsedSidebarRef = useRef(false);
   
   // Check if any artifact panel is open
-  const anyArtifactPanelOpen = artifactPanelOpen || draftArtifactPanelOpen || reviewArtifactPanelOpen || unifiedArtifactPanelOpen;
+  const anyArtifactPanelOpen = artifactPanelOpen || draftArtifactPanelOpen || unifiedArtifactPanelOpen;
   
   // Check if we're coming from the assistant homepage
   const [isFromHomepage] = useState(() => {
@@ -222,6 +218,18 @@ export default function AssistantChatPage({
         sessionStorage.removeItem('fromAssistantHomepage');
       }
       return fromHomepage;
+    }
+    return false;
+  });
+  
+  // Check if this is a workflow-initiated chat
+  const [isWorkflowInitiated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const workflowInitiated = sessionStorage.getItem('isWorkflowInitiated') === 'true';
+      if (workflowInitiated) {
+        sessionStorage.removeItem('isWorkflowInitiated');
+      }
+      return workflowInitiated;
     }
     return false;
   });
@@ -242,13 +250,12 @@ export default function AssistantChatPage({
   const [isEditingDraftArtifactTitle, setIsEditingDraftArtifactTitle] = useState(false);
   const [editedDraftArtifactTitle, setEditedDraftArtifactTitle] = useState(selectedDraftArtifact?.title || '');
   
-  const [isEditingReviewArtifactTitle, setIsEditingReviewArtifactTitle] = useState(false);
-  const [editedReviewArtifactTitle, setEditedReviewArtifactTitle] = useState(selectedReviewArtifact?.title || '');
+
   
   const chatTitleInputRef = useRef<HTMLInputElement>(null);
   const artifactTitleInputRef = useRef<HTMLInputElement>(null);
   const draftArtifactTitleInputRef = useRef<HTMLInputElement>(null);
-  const reviewArtifactTitleInputRef = useRef<HTMLInputElement>(null);
+
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
@@ -285,12 +292,7 @@ export default function AssistantChatPage({
     }
   }, [selectedDraftArtifact]);
 
-  // Update edited review artifact title when selected review artifact changes
-  useEffect(() => {
-    if (selectedReviewArtifact) {
-      setEditedReviewArtifactTitle(selectedReviewArtifact.title);
-    }
-  }, [selectedReviewArtifact]);
+
 
   // Handle scroll detection
   useEffect(() => {
@@ -439,39 +441,7 @@ export default function AssistantChatPage({
     setIsEditingDraftArtifactTitle(false);
   }, [editedDraftArtifactTitle, selectedDraftArtifact]);
 
-  // Handle saving review artifact title
-  const handleSaveReviewArtifactTitle = useCallback(() => {
-    if (editedReviewArtifactTitle.trim() && selectedReviewArtifact) {
-      if (editedReviewArtifactTitle !== selectedReviewArtifact.title) {
-        // Update the selected review artifact
-        setSelectedReviewArtifact({
-          ...selectedReviewArtifact,
-          title: editedReviewArtifactTitle
-        });
-        
-        // Also update the title in the messages array
-        setMessages(prevMessages => 
-          prevMessages.map(msg => {
-            if (msg.type === 'artifact' && msg.artifactData?.title === selectedReviewArtifact.title) {
-              return {
-                ...msg,
-                artifactData: {
-                  ...msg.artifactData,
-                  title: editedReviewArtifactTitle
-                }
-              };
-            }
-            return msg;
-          })
-        );
-        
-        toast.success("Review artifact title updated");
-      }
-    } else if (selectedReviewArtifact) {
-      setEditedReviewArtifactTitle(selectedReviewArtifact.title);
-    }
-    setIsEditingReviewArtifactTitle(false);
-  }, [editedReviewArtifactTitle, selectedReviewArtifact]);
+
 
   // Handle clicking outside of input fields
   useEffect(() => {
@@ -485,18 +455,16 @@ export default function AssistantChatPage({
       if (draftArtifactTitleInputRef.current && !draftArtifactTitleInputRef.current.contains(event.target as Node)) {
         handleSaveDraftArtifactTitle();
       }
-      if (reviewArtifactTitleInputRef.current && !reviewArtifactTitleInputRef.current.contains(event.target as Node)) {
-        handleSaveReviewArtifactTitle();
-      }
+
     };
 
-    if (isEditingChatTitle || isEditingArtifactTitle || isEditingDraftArtifactTitle || isEditingReviewArtifactTitle) {
+    if (isEditingChatTitle || isEditingArtifactTitle || isEditingDraftArtifactTitle) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [isEditingChatTitle, isEditingArtifactTitle, isEditingDraftArtifactTitle, isEditingReviewArtifactTitle, editedChatTitle, editedArtifactTitle, editedDraftArtifactTitle, editedReviewArtifactTitle, handleSaveChatTitle, handleSaveArtifactTitle, handleSaveDraftArtifactTitle, handleSaveReviewArtifactTitle]);
+  }, [isEditingChatTitle, isEditingArtifactTitle, isEditingDraftArtifactTitle, editedChatTitle, editedArtifactTitle, editedDraftArtifactTitle, handleSaveChatTitle, handleSaveArtifactTitle, handleSaveDraftArtifactTitle]);
 
   // Auto-collapse sidebar when artifact panel opens
   // Note: This is a one-time auto-collapse for space optimization.
@@ -544,16 +512,63 @@ export default function AssistantChatPage({
       requestAnimationFrame(() => {
         setArtifactPanelOpen(false);
         setDraftArtifactPanelOpen(false);
-        setReviewArtifactPanelOpen(false);
         setUnifiedArtifactPanelOpen(false);
         setSelectedArtifact(null);
         setSelectedDraftArtifact(null);
-        setSelectedReviewArtifact(null);
         setCurrentArtifactType(null);
         setShouldTriggerExpand(false);
       });
     }
   }, [shouldTriggerExpand]);
+
+  // Function to handle workflow-initiated messages (AI-only response)
+  const sendWorkflowMessage = useCallback((workflowTitle: string) => {
+    setIsLoading(true);
+    
+    // Create assistant message without thinking states for first workflow message
+    const assistantMessage = {
+      role: 'assistant' as const,
+      content: '', // Will be populated shortly
+      type: 'text' as const, // Text type for workflow responses
+      isLoading: true,
+      isWorkflowResponse: true, // Flag to identify workflow responses
+      workflowTitle: workflowTitle,
+      isFirstWorkflowMessage: true, // Flag to identify this is the first message
+      showThinking: false // Explicitly disable thinking state for first message
+    };
+    
+    // Add only the assistant message (no user message for workflow)
+    setMessages([assistantMessage]);
+    
+    // Scroll to bottom after message is added
+    setTimeout(() => scrollToBottom(), 50);
+    
+    // Show the content quickly without thinking states
+    setTimeout(() => {
+      // Update the assistant message with actual content for S-1 workflow
+      setMessages(prev => prev.map((msg, idx) => {
+        if (idx === 0 && msg.role === 'assistant' && msg.isLoading) {
+          let content = '';
+          
+          if (workflowTitle.toLowerCase().includes('s-1')) {
+            content = "Let's get going on drafting your S-1. Before we get started, I'll need some supporting materials (charters, financials, press releases, prior filings). I'll also need key deal details like offering type, structure, and use of proceeds. After I have all the information, I can generate a draft S-1 shell that you can edit in draft mode. First things first, how would you like to upload your supporting documents?";
+          } else {
+            content = `I'll help you with "${workflowTitle}". What specific information or documents would you like me to work with?`;
+          }
+          
+          return {
+            ...msg,
+            content,
+            isLoading: false
+          };
+        }
+        return msg;
+      }));
+      
+      setIsLoading(false);
+      scrollToBottom();
+    }, 300); // Much shorter delay since no thinking states
+  }, [scrollToBottom]);
 
   const sendMessage = useCallback((messageOverride?: string) => {
     const messageToSend = messageOverride || inputValue;
@@ -572,11 +587,9 @@ export default function AssistantChatPage({
       // Determine artifact type using weighted keyword scoring
       const artifactType = detectArtifactType(userMessage);
       const isDraftArtifact = artifactType === 'draft';
-      const isReviewArtifact = artifactType === 'review';
       
       // Open sources drawer only on the first message if not already opened
-      // BUT only if it's not a review artifact
-      if (!sourcesDrawerOpen && !hasOpenedSourcesDrawerRef.current && !isReviewArtifact) {
+      if (!sourcesDrawerOpen && !hasOpenedSourcesDrawerRef.current) {
         setTimeout(() => {
           setSourcesDrawerOpen(true);
           hasOpenedSourcesDrawerRef.current = true;
@@ -584,7 +597,7 @@ export default function AssistantChatPage({
       }
       
       // Get the thinking content for the appropriate variant
-      const variant = isDraftArtifact ? 'draft' : isReviewArtifact ? 'review' : 'analysis';
+      const variant = isDraftArtifact ? 'draft' : 'analysis';
       const thinkingContent = getThinkingContent(variant);
       
       // Initialize progressive loading states - show content piece by piece
@@ -599,15 +612,15 @@ export default function AssistantChatPage({
       const assistantMessage = {
         role: 'assistant' as const,
         content: '', // Empty initially, will be populated after thinking
-        type: isDraftArtifact || isReviewArtifact ? 'artifact' as const : 'text' as const,
+        type: isDraftArtifact ? 'artifact' as const : 'text' as const,
         thinkingContent,
         loadingState,
         isLoading: true,
-        ...(isDraftArtifact || isReviewArtifact ? {
+        ...(isDraftArtifact ? {
           artifactData: {
             title: isDraftArtifact ? 'Record of Deliberation' : 'Extraction of Agreements and Provisions',
             subtitle: isDraftArtifact ? 'Version 1' : '24 columns · 104 rows',
-            variant: isDraftArtifact ? 'draft' as const : 'review' as const
+            variant: 'draft' as const
           }
         } : {})
       };
@@ -679,9 +692,7 @@ export default function AssistantChatPage({
               ...msg,
               content: isDraftArtifact 
                 ? 'I have drafted a memo for you. Please let me know if you would like to continue editing the draft or if you need any specific changes or additional information included.'
-                : isReviewArtifact
-                  ? 'I have generated a review table extracting terms from the industrial merger agreements as requested. Please let me know if you would like to continue editing the table or if you need any specific changes.'
-                  : 'legal-analysis',
+                : 'legal-analysis',
               isLoading: false,
               loadingStates: undefined // Clear loading states after content appears
             };
@@ -699,13 +710,22 @@ export default function AssistantChatPage({
   useEffect(() => {
     if (initialMessage && !hasProcessedInitialMessageRef.current) {
       hasProcessedInitialMessageRef.current = true;
-      setInputValue(initialMessage);
-      // Use a short timeout to ensure the component is fully mounted
-      setTimeout(() => {
-        sendMessage(initialMessage);
-      }, 100);
+      
+      // Check if this is a workflow-initiated chat
+      if (isWorkflow || isWorkflowInitiated) {
+        // For workflows, send AI message directly
+        setTimeout(() => {
+          sendWorkflowMessage(initialMessage);
+        }, 100);
+      } else {
+        // For regular chats, send as user message
+        setInputValue(initialMessage);
+        setTimeout(() => {
+          sendMessage(initialMessage);
+        }, 100);
+      }
     }
-  }, [initialMessage, sendMessage]);
+  }, [initialMessage, sendMessage, sendWorkflowMessage, isWorkflow, isWorkflowInitiated]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Allow resizing if any artifact panel is open
@@ -843,7 +863,7 @@ export default function AssistantChatPage({
       isPastCollapseThresholdRef.current = false;
       isPastExpandThresholdRef.current = false;
     };
-  }, [isResizing, chatOpen, artifactPanelOpen, draftArtifactPanelOpen, reviewArtifactPanelOpen, anyArtifactPanelOpen, isPastCollapseThreshold, isPastExpandThreshold]);
+  }, [isResizing, chatOpen, artifactPanelOpen, draftArtifactPanelOpen, anyArtifactPanelOpen, isPastCollapseThreshold, isPastExpandThreshold]);
 
   return (
     <div className="flex h-screen w-full">
@@ -946,7 +966,7 @@ export default function AssistantChatPage({
             </div>
             
             {/* Conditional buttons based on artifact panel state */}
-            {!artifactPanelOpen && !draftArtifactPanelOpen && !reviewArtifactPanelOpen ? (
+            {!artifactPanelOpen && !draftArtifactPanelOpen ? (
               // When artifact panel is collapsed, show full secondary buttons
               <div className="flex gap-2 items-center">
                 <Button 
@@ -1048,31 +1068,35 @@ export default function AssistantChatPage({
                     {message.role === 'assistant' && (
                       <>
 
-                        {/* Show loading thinking states OR regular thinking state */}
-                        {message.isLoading && message.thinkingContent && message.loadingState ? (
-                          // Loading thinking states - progressively reveal content
-                          <ThinkingState
-                            variant={message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis'}
-                            title="Thought"
-                            durationSeconds={6}
-                            summary={message.loadingState.showSummary ? message.thinkingContent.summary : undefined}
-                            bullets={message.thinkingContent.bullets?.slice(0, message.loadingState.visibleBullets)}
-                            additionalText={message.loadingState.showAdditionalText ? message.thinkingContent.additionalText : undefined}
-                            childStates={message.thinkingContent.childStates?.slice(0, message.loadingState.visibleChildStates)}
-                            isLoading={true} // This will keep it expanded and show shimmer
-                          />
-                        ) : (
-                          // Regular thinking state (after loading)
-                          <ThinkingState
-                            variant={message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis'}
-                            title="Thought"
-                            durationSeconds={6}
-                            summary={getThinkingContent(message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis').summary}
-                            bullets={getThinkingContent(message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis').bullets}
-                            additionalText={getThinkingContent(message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis').additionalText}
-                            childStates={getThinkingContent(message.type === 'artifact' ? (message.artifactData?.variant === 'draft' ? 'draft' : 'review') : 'analysis').childStates}
-                            defaultOpen={false} // Will be collapsed after loading
-                          />
+                        {/* Show loading thinking states OR regular thinking state - unless explicitly disabled */}
+                        {message.showThinking !== false && (
+                          <>
+                            {message.isLoading && message.thinkingContent && message.loadingState ? (
+                              // Loading thinking states - progressively reveal content
+                              <ThinkingState
+                                variant={message.type === 'artifact' ? 'draft' : 'analysis'}
+                                title="Thought"
+                                durationSeconds={6}
+                                summary={message.loadingState.showSummary ? message.thinkingContent.summary : undefined}
+                                bullets={message.thinkingContent.bullets?.slice(0, message.loadingState.visibleBullets)}
+                                additionalText={message.loadingState.showAdditionalText ? message.thinkingContent.additionalText : undefined}
+                                childStates={message.thinkingContent.childStates?.slice(0, message.loadingState.visibleChildStates)}
+                                isLoading={true} // This will keep it expanded and show shimmer
+                              />
+                            ) : (
+                              // Regular thinking state (after loading)
+                              <ThinkingState
+                                variant={message.type === 'artifact' ? 'draft' : 'analysis'}
+                                title="Thought"
+                                durationSeconds={6}
+                                summary={getThinkingContent(message.type === 'artifact' ? 'draft' : 'analysis').summary}
+                                bullets={getThinkingContent(message.type === 'artifact' ? 'draft' : 'analysis').bullets}
+                                additionalText={getThinkingContent(message.type === 'artifact' ? 'draft' : 'analysis').additionalText}
+                                childStates={getThinkingContent(message.type === 'artifact' ? 'draft' : 'analysis').childStates}
+                                defaultOpen={false} // Will be collapsed after loading
+                              />
+                            )}
+                          </>
                         )}
                         
                         {/* Show content only if not loading */}
@@ -1089,19 +1113,17 @@ export default function AssistantChatPage({
                           {message.content}
                         </div>
                         <div className="pl-2">
-                          <ReviewTableArtifactCard
+                          <ArtifactCard
                             title={message.artifactData?.title || 'Artifact'}
                             subtitle={message.artifactData?.subtitle || ''}
                             variant={anyArtifactPanelOpen ? 'small' : 'large'}
                             isSelected={unifiedArtifactPanelOpen && (
-                              (currentArtifactType === 'draft' && message.artifactData?.variant === 'draft' && selectedDraftArtifact?.title === message.artifactData?.title) ||
-                              (currentArtifactType === 'review' && message.artifactData?.variant !== 'draft' && selectedReviewArtifact?.title === message.artifactData?.title)
+                              currentArtifactType === 'draft' && message.artifactData?.variant === 'draft' && selectedDraftArtifact?.title === message.artifactData?.title
                             )}
-                            iconType={message.artifactData?.variant === 'draft' ? 'file' : 'table'}
-                            showSources={message.artifactData?.variant === 'draft'}
+                            showSources={true}
                             onClick={() => {
                             // Immediately update the artifact content
-                            const artifactType = message.artifactData?.variant === 'draft' ? 'draft' : 'review';
+                            const artifactType = 'draft';
                             const artifactData = {
                               title: message.artifactData?.title || 'Artifact',
                               subtitle: message.artifactData?.subtitle || ''
@@ -1112,15 +1134,8 @@ export default function AssistantChatPage({
                             setUnifiedArtifactPanelOpen(true);
                             
                             // Also update the legacy states for backward compatibility
-                            if (artifactType === 'draft') {
-                              setSelectedDraftArtifact(artifactData);
-                              setDraftArtifactPanelOpen(true);
-                              setReviewArtifactPanelOpen(false);
-                            } else {
-                              setSelectedReviewArtifact(artifactData);
-                              setReviewArtifactPanelOpen(true);
-                              setDraftArtifactPanelOpen(false);
-                            }
+                            setSelectedDraftArtifact(artifactData);
+                            setDraftArtifactPanelOpen(true);
                           }}
                           />
                         </div>
@@ -1181,6 +1196,57 @@ export default function AssistantChatPage({
                             message.content
                           )}
                         </div>
+                        
+                        {/* Workflow shortcut buttons */}
+                        {message.isWorkflowResponse && message.workflowTitle?.toLowerCase().includes('s-1') && (
+                          <div className="pl-2 mt-4">
+                            <div className="flex flex-wrap gap-2">
+                              <button 
+                                className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
+                                onClick={() => setIsFileManagementOpen(true)}
+                              >
+                                <CloudUpload size={16} className="text-neutral-600" />
+                                <span className="text-neutral-900 text-sm font-medium">Upload files</span>
+                              </button>
+                              
+                              <button 
+                                className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
+                                onClick={() => setIsiManagePickerOpen(true)}
+                              >
+                                <Image src="/imanage.svg" alt="" width={16} height={16} />
+                                <span className="text-neutral-900 text-sm font-medium">Add from iManage</span>
+                              </button>
+                              
+                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5">
+                                <Image src="/sharepoint.svg" alt="" width={16} height={16} />
+                                <span className="text-neutral-900 text-sm font-medium">Add from SharePoint</span>
+                              </button>
+                              
+                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5">
+                                <Image src="/google-drive.svg" alt="" width={16} height={16} />
+                                <span className="text-neutral-900 text-sm font-medium">Add from Google Drive</span>
+                              </button>
+                              
+                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5">
+                                <Image src="/folderIcon.svg" alt="" width={16} height={16} />
+                                <span className="text-neutral-900 text-sm font-medium">Add from Vault project</span>
+                              </button>
+                              
+                              <button 
+                                className="py-1 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors"
+                                onClick={() => {
+                                  // Skip and send a follow-up message
+                                  const skipMessage = "I don't have any documents to upload right now. Please proceed with creating a draft S-1 shell.";
+                                  setInputValue(skipMessage);
+                                  sendMessage(skipMessage);
+                                }}
+                              >
+                                <span className="text-neutral-900 text-sm font-medium">Skip</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        
                         {/* Sources section for legal analysis */}
                         {message.content === 'legal-analysis' && (
                           <>
@@ -1483,67 +1549,16 @@ export default function AssistantChatPage({
                 sourcesDrawerOpen={sourcesDrawerOpen}
                 onSourcesDrawerOpenChange={setSourcesDrawerOpen}
               />
-            ) : (
-              <ReviewArtifactPanel
-                selectedArtifact={selectedReviewArtifact}
-                isEditingArtifactTitle={isEditingReviewArtifactTitle}
-                editedArtifactTitle={editedReviewArtifactTitle}
-                onEditedArtifactTitleChange={setEditedReviewArtifactTitle}
-                onStartEditingTitle={() => {
-                  setIsEditingReviewArtifactTitle(true);
-                  setEditedReviewArtifactTitle(selectedReviewArtifact?.title || 'Artifact');
-                }}
-                onSaveTitle={handleSaveReviewArtifactTitle}
-                onClose={() => {
-                  setUnifiedArtifactPanelOpen(false);
-                  setReviewArtifactPanelOpen(false);
-                  setSelectedReviewArtifact(null);
-                  setCurrentArtifactType(null);
-                }}
-                chatOpen={chatOpen}
-                onToggleChat={toggleChat}
-                shareArtifactDialogOpen={shareArtifactDialogOpen}
-                onShareArtifactDialogOpenChange={setShareArtifactDialogOpen}
-                exportReviewDialogOpen={exportReviewDialogOpen}
-                onExportReviewDialogOpenChange={setExportReviewDialogOpen}
-                artifactTitleInputRef={reviewArtifactTitleInputRef}
-              />
-            )}
+            ) : null}
           </>
         )}
       </AnimatePresence>
 
-      {/* Legacy Artifact Panel - For backward compatibility */}
-      <AnimatePresence>
-        {artifactPanelOpen && (
-          <ReviewArtifactPanel
-            selectedArtifact={selectedArtifact}
-            isEditingArtifactTitle={isEditingArtifactTitle}
-            editedArtifactTitle={editedArtifactTitle}
-            onEditedArtifactTitleChange={setEditedArtifactTitle}
-            onStartEditingTitle={() => {
-              setIsEditingArtifactTitle(true);
-              setEditedArtifactTitle(selectedArtifact?.title || 'Artifact');
-            }}
-            onSaveTitle={handleSaveArtifactTitle}
-            onClose={() => {
-              setArtifactPanelOpen(false);
-              setSelectedArtifact(null);
-            }}
-            chatOpen={chatOpen}
-            onToggleChat={toggleChat}
-            shareArtifactDialogOpen={shareArtifactDialogOpen}
-            onShareArtifactDialogOpenChange={setShareArtifactDialogOpen}
-            exportReviewDialogOpen={exportReviewDialogOpen}
-            onExportReviewDialogOpenChange={setExportReviewDialogOpen}
-            artifactTitleInputRef={artifactTitleInputRef}
-          />
-        )}
-      </AnimatePresence>
+
       
       {/* Sources Panel - Shows as third panel when artifact is open and above 2xl */}
       <AnimatePresence>
-        {sourcesDrawerOpen && (artifactPanelOpen || draftArtifactPanelOpen || reviewArtifactPanelOpen) && isAbove2xl && (
+        {sourcesDrawerOpen && (artifactPanelOpen || draftArtifactPanelOpen) && isAbove2xl && (
           <motion.div 
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 400, opacity: 1 }}
@@ -1581,7 +1596,7 @@ export default function AssistantChatPage({
       
       {/* Sources Drawer - Sheet variant when artifact panel is open and below 2xl */}
       <AnimatePresence>
-        {(artifactPanelOpen || draftArtifactPanelOpen || reviewArtifactPanelOpen) && !isAbove2xl && (
+        {(artifactPanelOpen || draftArtifactPanelOpen) && !isAbove2xl && (
           <SourcesDrawer 
             isOpen={sourcesDrawerOpen} 
             onClose={() => setSourcesDrawerOpen(false)}
@@ -1615,6 +1630,15 @@ export default function AssistantChatPage({
       <FileManagementDialog 
         isOpen={isFileManagementOpen} 
         onClose={() => setIsFileManagementOpen(false)} 
+      />
+      <IManageFilePickerDialog 
+        isOpen={isiManagePickerOpen} 
+        onClose={() => setIsiManagePickerOpen(false)} 
+        onFilesSelected={(files) => {
+          console.log('Selected files from iManage:', files);
+          // Handle selected files here
+          toast.success(`Added ${files.length} file${files.length === 1 ? '' : 's'} from iManage`);
+        }}
       />
         </div>
       </SidebarInset>

@@ -1,7 +1,7 @@
 /**
  * Artifact Detection Utility
  * Uses weighted keyword scoring to detect whether a user message
- * should trigger a draft or review artifact
+ * should trigger a draft artifact
  */
 
 interface KeywordWeight {
@@ -28,23 +28,7 @@ const draftKeywords: KeywordWeight[] = [
   { word: 'summary', weight: 0.75, variants: ['summarize', 'summarizing', 'summaries'] }
 ];
 
-// Review/table-related keywords with weights
-const reviewKeywords: KeywordWeight[] = [
-  { word: 'review', weight: 1.0, variants: ['reviewing', 'reviewed', 'reviews'] },
-  { word: 'table', weight: 0.9, variants: ['tables', 'tabular', 'tabulate'] },
-  { word: 'extract', weight: 0.8, variants: ['extraction', 'extracting', 'extracted'] },
-  { word: 'analyze', weight: 0.8, variants: ['analysis', 'analyzing', 'analyzed', 'analyse'] },
-  { word: 'spreadsheet', weight: 0.9, variants: ['spreadsheets'] },
-  { word: 'data', weight: 0.6, variants: ['dataset', 'datasets'] },
-  { word: 'columns', weight: 0.7, variants: ['column', 'cols', 'col'] },
-  { word: 'rows', weight: 0.7, variants: ['row'] },
-  { word: 'grid', weight: 0.75, variants: ['grids'] },
-  { word: 'comparison', weight: 0.75, variants: ['compare', 'comparing', 'compared'] },
-  { word: 'matrix', weight: 0.8, variants: ['matrices'] },
-  { word: 'chart', weight: 0.7, variants: ['charts', 'charting'] },
-  { word: 'list', weight: 0.65, variants: ['listing', 'lists', 'listed'] },
-  { word: 'organize', weight: 0.7, variants: ['organizing', 'organized', 'organization'] }
-];
+
 
 /**
  * Calculate the artifact score for a message based on weighted keywords
@@ -82,11 +66,10 @@ function calculateArtifactScore(message: string, keywords: KeywordWeight[]): num
 /**
  * Detect artifact type based on weighted keyword scoring
  * @param message The user's message
- * @returns 'draft' | 'review' | null
+ * @returns 'draft' | null
  */
-export function detectArtifactType(message: string): 'draft' | 'review' | null {
+export function detectArtifactType(message: string): 'draft' | null {
   const draftScore = calculateArtifactScore(message, draftKeywords);
-  const reviewScore = calculateArtifactScore(message, reviewKeywords);
   
   // Threshold for minimum score to trigger an artifact
   const threshold = 0.6;
@@ -96,29 +79,13 @@ export function detectArtifactType(message: string): 'draft' | 'review' | null {
     console.log('Artifact Detection:', {
       message,
       draftScore,
-      reviewScore,
       threshold
     });
   }
   
-  // Return the highest scoring type if it meets the threshold
-  if (draftScore >= threshold && draftScore > reviewScore) {
+  // Return draft if it meets the threshold
+  if (draftScore >= threshold) {
     return 'draft';
-  }
-  if (reviewScore >= threshold && reviewScore > draftScore) {
-    return 'review';
-  }
-  
-  // If scores are tied and above threshold, use context clues
-  if (draftScore >= threshold && reviewScore >= threshold && draftScore === reviewScore) {
-    // Look for more specific action words that might indicate intent
-    const actionWords = message.toLowerCase();
-    if (actionWords.includes('write') || actionWords.includes('compose') || actionWords.includes('draft')) {
-      return 'draft';
-    }
-    if (actionWords.includes('extract') || actionWords.includes('analyze') || actionWords.includes('table')) {
-      return 'review';
-    }
   }
   
   return null;
@@ -131,14 +98,11 @@ export function detectArtifactType(message: string): 'draft' | 'review' | null {
  */
 export function getArtifactScoreDetails(message: string): {
   draftScore: number;
-  reviewScore: number;
-  suggestedType: 'draft' | 'review' | null;
+  suggestedType: 'draft' | null;
   draftKeywordsFound: string[];
-  reviewKeywordsFound: string[];
 } {
   const lowerMessage = message.toLowerCase();
   const draftKeywordsFound: string[] = [];
-  const reviewKeywordsFound: string[] = [];
   
   // Find matching keywords for draft
   for (const keywordObj of draftKeywords) {
@@ -152,27 +116,12 @@ export function getArtifactScoreDetails(message: string): {
     }
   }
   
-  // Find matching keywords for review
-  for (const keywordObj of reviewKeywords) {
-    const allVariants = [keywordObj.word, ...(keywordObj.variants || [])];
-    for (const variant of allVariants) {
-      const regex = new RegExp(`\\b${variant}\\b`, 'i');
-      if (regex.test(lowerMessage)) {
-        reviewKeywordsFound.push(variant);
-        break;
-      }
-    }
-  }
-  
   const draftScore = calculateArtifactScore(message, draftKeywords);
-  const reviewScore = calculateArtifactScore(message, reviewKeywords);
   const suggestedType = detectArtifactType(message);
   
   return {
     draftScore,
-    reviewScore,
     suggestedType,
-    draftKeywordsFound,
-    reviewKeywordsFound
+    draftKeywordsFound
   };
 }

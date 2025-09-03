@@ -1,8 +1,10 @@
+"use client";
+
 import React from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
-interface ReviewTableArtifactCardProps {
+interface ArtifactCardProps {
   title: string;
   subtitle: string;
   variant?: 'large' | 'small';
@@ -13,16 +15,16 @@ interface ReviewTableArtifactCardProps {
   showSources?: boolean;
 }
 
-export function ReviewTableArtifactCard({
+export function ArtifactCard({
   title,
   subtitle,
   variant = 'large',
   isSelected = false,
   className,
   onClick,
-  iconType = 'table',
+  iconType = 'file',
   showSources = false,
-}: ReviewTableArtifactCardProps) {
+}: ArtifactCardProps) {
   const isSmall = variant === 'small';
   const shouldShowSources = showSources && iconType === 'file';
 
@@ -68,11 +70,9 @@ export function ReviewTableArtifactCard({
             </p>
           )}
         </div>
-        
-
       </div>
     </div>
   );
 }
 
-export default ReviewTableArtifactCard; 
+export default ArtifactCard;
