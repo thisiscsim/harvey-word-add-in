@@ -245,15 +245,17 @@
   height: 100%;
   outline: none;
   cursor: text;
+  font-size: 14px;
+  color: #1F1D1A;
 }
 
 .ProseMirror p {
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .ProseMirror p + p {
-  margin-top: 1em;
+  margin-top: 0.6em;
 }
 
 .ProseMirror h1,
@@ -262,38 +264,49 @@
 .ProseMirror h4,
 .ProseMirror h5,
 .ProseMirror h6 {
-  line-height: 1.2;
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
+  line-height: 1.15;
+  margin-top: 1em;
+  margin-bottom: 0.35em;
   font-weight: 600;
+  color: #131210;
+}
+
+.ProseMirror h1:first-child,
+.ProseMirror h2:first-child,
+.ProseMirror h3:first-child,
+.ProseMirror h4:first-child,
+.ProseMirror h5:first-child,
+.ProseMirror h6:first-child {
+  margin-top: 0;
 }
 
 .ProseMirror h1 {
-  font-size: 2em;
+  font-size: 1.75em;
 }
 
 .ProseMirror h2 {
-  font-size: 1.5em;
+  font-size: 1.4em;
 }
 
 .ProseMirror h3 {
-  font-size: 1.25em;
+  font-size: 1.15em;
 }
 
 .ProseMirror ul,
 .ProseMirror ol {
   padding-left: 1.5em;
-  margin: 1em 0;
+  margin: 0.6em 0;
 }
 
 .ProseMirror li {
-  margin: 0.25em 0;
+  margin: 0.2em 0;
+  line-height: 1.4;
 }
 
 .ProseMirror blockquote {
   border-left: 3px solid #e5e7eb;
   padding-left: 1em;
-  margin: 1em 0;
+  margin: 0.6em 0;
   font-style: italic;
   color: #6b7280;
 }
@@ -314,7 +327,7 @@
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
-  margin: 1em 0;
+  margin: 0.6em 0;
 }
 
 .ProseMirror pre code {
@@ -332,7 +345,59 @@
 .ProseMirror hr {
   border: none;
   border-top: 1px solid #e5e7eb;
-  margin: 2em 0;
+  margin: 1.2em 0;
+}
+
+/* Table Styles for better formatting */
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0.6em 0;
+  overflow: hidden;
+  font-size: 0.875em;
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  min-width: 1em;
+  border: 1px solid #e5e7eb;
+  padding: 0.45em 0.65em;
+  vertical-align: top;
+  position: relative;
+  line-height: 1.3;
+}
+
+.ProseMirror table th {
+  font-weight: 600;
+  text-align: left;
+  background-color: #f9fafb;
+}
+
+.ProseMirror table .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(200, 200, 255, 0.4);
+  pointer-events: none;
+}
+
+.ProseMirror table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: #adf;
+  pointer-events: none;
+}
+
+/* Improve strong/bold text visibility */
+.ProseMirror strong,
+.ProseMirror b {
+  font-weight: 600;
+  color: #100F0C;
 }
 
 /* Placeholder text */

@@ -59,7 +59,7 @@ export function AppSidebar() {
         "p-0 relative bg-white",
         state === "collapsed" && "group"
       )}>
-        {/* Paul Weiss logo/avatar */}
+        {/* Latham & Watkins logo/avatar */}
         <div className={cn(
           "flex items-center h-14 transition-colors bg-white",
           state === "expanded" ? "px-[10px] gap-2" : "px-[6px] justify-center"
@@ -78,8 +78,8 @@ export function AppSidebar() {
                 <PanelLeft className="w-4 h-4 text-neutral-700" />
               ) : (
                 <Image
-                  src="/PW-icon logo.png"
-                  alt="Paul Weiss"
+                  src="/latham-logo.jpg"
+                  alt="Latham & Watkins"
                   width={20}
                   height={20}
                   className="rounded-[4px]"
@@ -95,7 +95,7 @@ export function AppSidebar() {
             </button>
             {state === "expanded" && (
               <span className="text-sm font-medium text-neutral-900 truncate min-w-0">
-                Paul, Weiss, Rifkind, Wharton & Garrison LLP
+                Latham & Watkins
               </span>
             )}
           </div>

@@ -83,17 +83,17 @@ export default function DraftArtifactPanel({
       }),
     ],
     content: `
-      <h2>UNITED STATES</h2>
-      <h3>SECURITIES AND EXCHANGE COMMISSION</h3>
+      <h2>United States</h2>
+      <h3>Securities and Exchange Commission</h3>
       <h3>Washington, D.C. 20549</h3>
       <hr/>
-      <h3>FORM S-1</h3>
-      <h3>REGISTRATION STATEMENT UNDER THE SECURITIES ACT OF 1933</h3>
+      <h3>Form S-1</h3>
+      <h3>Registration Statement under the Securities Act of 1933</h3>
       <hr/>
       
       <table>
         <tr>
-          <td><strong>VALAR AI, INC.</strong><br/>
+          <td><strong>Valar AI, Inc.</strong><br/>
           <td><strong>Delaware Corporation</strong><br/>
           <td><strong>9872398729</strong>
         </tr>
