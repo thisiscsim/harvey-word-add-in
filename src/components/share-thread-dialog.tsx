@@ -380,6 +380,7 @@ export default function ShareThreadDialog({ isOpen, onClose }: ShareThreadDialog
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[540px] max-w-[540px] p-0 gap-0 overflow-hidden">
+        <DialogTitle className="sr-only">Share Thread</DialogTitle>
         {currentView === "main" && renderMainView()}
         {currentView === "artifact" && renderAccessView("artifact")}
         {currentView === "thread" && renderAccessView("thread")}

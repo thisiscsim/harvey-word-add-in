@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, CloudUpload } from "lucide-react";
+import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, CloudUpload, FileSearch, LoaderCircle, FilePen } from "lucide-react";
 import SourcesDrawer from "@/components/sources-drawer";
 import ShareThreadDialog from "@/components/share-thread-dialog";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
@@ -33,24 +33,50 @@ import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
 type Message = {
   role: 'user' | 'assistant';
   content: string;
-  type?: 'text' | 'artifact';
+  type?: 'text' | 'artifact' | 'files';
   artifactData?: {
     title: string;
     subtitle: string;
     variant?: 'draft'; // Determines which panel to open
   };
+  filesData?: Array<{
+    id: string;
+    name: string;
+    type: 'folder' | 'file';
+    modifiedDate: string;
+    size?: string;
+    path: string;
+  }>;
   isLoading?: boolean;
   thinkingContent?: ReturnType<typeof getThinkingContent>;
   loadingState?: {
     showSummary: boolean;
     visibleBullets: number;
     showAdditionalText: boolean;
-    visibleChildStates: number;
   };
   isWorkflowResponse?: boolean;
   workflowTitle?: string;
   isFirstWorkflowMessage?: boolean;
   showThinking?: boolean;
+  showFileReview?: boolean;
+  fileReviewContent?: {
+    summary: string;
+    files: Array<{
+      name: string;
+      type: 'pdf' | 'docx' | 'spreadsheet' | 'folder' | 'text';
+    }>;
+    totalFiles: number;
+  };
+  fileReviewLoadingState?: {
+    isLoading: boolean;
+    loadedFiles: number;
+  };
+  showDraftGeneration?: boolean;
+  draftGenerationLoadingState?: {
+    isLoading: boolean;
+    showSummary?: boolean;
+    visibleBullets?: number;
+  };
 };
 
 // Shared animation configuration for consistency - refined timing
@@ -84,43 +110,9 @@ function getThinkingContent(variant: 'analysis' | 'draft'): {
 
     default:
       return {
-        summary: 'The user wants me to recreate a morphing dialog component using shadcn dialog as the foundation. This sounds like they want a dialog that has smooth morphing animations - likely expanding from a trigger element or morphing between different states/sizes.',
-        bullets: [
-          'Since they mentioned "recreate", they might have seen this pattern somewhere, but they haven\'t provided a specific reference.',
-          'I should first understand their current codebase structure to see what\'s available',
-          'Then build a morphing dialog component that extends the shadcn dialog with smooth transitions'
-        ],
-        additionalText: '',
-        childStates: [
-          {
-            variant: 'analysis',
-            title: 'Found codebase structure',
-            summary: 'Searching "Give me an overview of the codebase"',
-            bullets: [
-              'Reading files: layout.tsx, globals.css'
-            ]
-          },
-          {
-            variant: 'analysis',
-            title: 'Analyzing component patterns',
-            summary: 'Identifying existing dialog and animation implementations',
-            bullets: [
-              'Checking for existing dialog components',
-              'Looking for animation libraries like Framer Motion',
-              'Understanding current UI component structure'
-            ]
-          },
-          {
-            variant: 'analysis',
-            title: 'Planning implementation approach',
-            summary: 'Determining the best way to create the morphing effect',
-            bullets: [
-              'Considering layout animation techniques',
-              'Planning state management for morphing states',
-              'Designing smooth transition choreography'
-            ]
-          }
-        ]
+        summary: 'Analyzing the request and determining the best approach to provide a comprehensive and helpful response.',
+        bullets: [],
+        additionalText: ''
       };
   }
 }
@@ -272,6 +264,48 @@ export default function AssistantChatPage({
         behavior: smooth ? 'smooth' : 'auto'
       });
     }
+  }, []);
+
+  // Maintain scroll position when container resizes
+  useEffect(() => {
+    if (!messagesContainerRef.current) return;
+    
+    const container = messagesContainerRef.current;
+    let wasNearBottom = false;
+    
+    // Check if we're near bottom before resize
+    const checkIfNearBottom = () => {
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      wasNearBottom = distanceFromBottom < 100;
+    };
+    
+    // Initial check
+    checkIfNearBottom();
+    
+    // Create ResizeObserver to detect when chat width changes
+    const resizeObserver = new ResizeObserver(() => {
+      // If we were near the bottom before resize, scroll to bottom
+      if (wasNearBottom) {
+        container.scrollTop = container.scrollHeight - container.clientHeight;
+      }
+      // Update our check for next resize
+      checkIfNearBottom();
+    });
+    
+    // Observe the container
+    resizeObserver.observe(container);
+    
+    // Also check on scroll
+    const handleScroll = () => {
+      checkIfNearBottom();
+    };
+    
+    container.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      resizeObserver.disconnect();
+      container.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
 
@@ -604,8 +638,7 @@ export default function AssistantChatPage({
       const loadingState = {
         showSummary: false,
         visibleBullets: 0,
-        showAdditionalText: false,
-        visibleChildStates: 0
+        showAdditionalText: false
       };
       
       // Create assistant message with loading thinking states
@@ -669,19 +702,6 @@ export default function AssistantChatPage({
           scrollToBottom();
         }, 1200 + (bullets.length * 400) + 300);
       }
-      
-      // Show child states if exist
-      const childStates = thinkingContent.childStates || [];
-      childStates.forEach((_, childIdx) => {
-        setTimeout(() => {
-          setMessages(prev => prev.map((msg, idx) => 
-            idx === prev.length - 1 && msg.role === 'assistant' && msg.isLoading && msg.loadingState
-              ? { ...msg, loadingState: { ...msg.loadingState, visibleChildStates: childIdx + 1 } }
-              : msg
-          ));
-          scrollToBottom();
-        }, 2800 + (childIdx * 350)); // Slightly adjusted timing for child states
-      });
       
       // Simulate AI response after thinking states complete
       setTimeout(() => {
@@ -944,7 +964,7 @@ export default function AssistantChatPage({
                       e.target.scrollLeft = 0;
                     }, 0);
                   }}
-                  className="text-neutral-900 font-medium bg-neutral-100 border border-neutral-400 outline-none px-2 py-1.5 -ml-2 rounded-md mr-4 text-sm"
+                  className="text-neutral-900 font-medium bg-neutral-200 border border-neutral-400 outline-none px-2 py-1.5 -ml-2 rounded-md mr-4 text-sm"
                   style={{ 
                     width: `${Math.min(Math.max(editedChatTitle.length * 8 + 40, 120), 600)}px`,
                     height: '32px'
@@ -1075,16 +1095,28 @@ export default function AssistantChatPage({
                               // Loading thinking states - progressively reveal content
                               <ThinkingState
                                 variant={message.type === 'artifact' ? 'draft' : 'analysis'}
-                                title="Thought"
-                                durationSeconds={6}
+                                title="Thinking..."
+                                durationSeconds={undefined}
                                 summary={message.loadingState.showSummary ? message.thinkingContent.summary : undefined}
                                 bullets={message.thinkingContent.bullets?.slice(0, message.loadingState.visibleBullets)}
                                 additionalText={message.loadingState.showAdditionalText ? message.thinkingContent.additionalText : undefined}
-                                childStates={message.thinkingContent.childStates?.slice(0, message.loadingState.visibleChildStates)}
+                                childStates={undefined} // Always single-step
                                 isLoading={true} // This will keep it expanded and show shimmer
                               />
+                            ) : message.thinkingContent ? (
+                              // Regular thinking state (after loading) - use the stored thinking content
+                              <ThinkingState
+                                variant={message.type === 'artifact' ? 'draft' : 'analysis'}
+                                title="Thought"
+                                durationSeconds={6}
+                                summary={message.thinkingContent.summary}
+                                bullets={message.thinkingContent.bullets}
+                                additionalText={message.thinkingContent.additionalText}
+                                childStates={undefined} // Always single-step
+                                defaultOpen={false} // Will be collapsed after loading
+                              />
                             ) : (
-                              // Regular thinking state (after loading)
+                              // Fallback to default thinking content if none stored
                               <ThinkingState
                                 variant={message.type === 'artifact' ? 'draft' : 'analysis'}
                                 title="Thought"
@@ -1092,7 +1124,7 @@ export default function AssistantChatPage({
                                 summary={getThinkingContent(message.type === 'artifact' ? 'draft' : 'analysis').summary}
                                 bullets={getThinkingContent(message.type === 'artifact' ? 'draft' : 'analysis').bullets}
                                 additionalText={getThinkingContent(message.type === 'artifact' ? 'draft' : 'analysis').additionalText}
-                                childStates={getThinkingContent(message.type === 'artifact' ? 'draft' : 'analysis').childStates}
+                                childStates={undefined} // Always single-step
                                 defaultOpen={false} // Will be collapsed after loading
                               />
                             )}
@@ -1114,9 +1146,10 @@ export default function AssistantChatPage({
                         </div>
                         <div className="pl-2">
                           <ArtifactCard
+                            key={`artifact-${message.artifactData?.title}-${unifiedArtifactPanelOpen}`}
                             title={message.artifactData?.title || 'Artifact'}
                             subtitle={message.artifactData?.subtitle || ''}
-                            variant={anyArtifactPanelOpen ? 'small' : 'large'}
+                            variant={unifiedArtifactPanelOpen ? 'small' : 'large'}
                             isSelected={unifiedArtifactPanelOpen && (
                               currentArtifactType === 'draft' && message.artifactData?.variant === 'draft' && selectedDraftArtifact?.title === message.artifactData?.title
                             )}
@@ -1197,10 +1230,161 @@ export default function AssistantChatPage({
                           )}
                         </div>
                         
+                        {/* File Review Thinking State */}
+                        {message.showFileReview && message.fileReviewContent && (
+                          <AnimatePresence>
+                            <motion.div 
+                              className="mt-3"
+                              
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            >
+                              <ThinkingState
+                                variant="analysis"
+                                title={message.fileReviewLoadingState?.isLoading ? "Reviewing files..." : "Reviewed all files"}
+                                durationSeconds={undefined}
+                                icon={FileSearch}
+                                summary={message.fileReviewContent.summary}
+                                customContent={
+                                <motion.div 
+                                  className="mt-3"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ duration: 0.3, ease: "easeOut" }}
+                                >
+                                  <div className="flex flex-wrap gap-2">
+                                    {message.fileReviewContent.files.map((file, idx) => (
+                                      <motion.div
+                                        key={`file-chip-${idx}`}
+                                        initial={{ opacity: 0, y: 4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ 
+                                          duration: 0.2, 
+                                          ease: "easeOut",
+                                          delay: Math.floor(idx / 3) * 0.1 // Animate by rows (assuming ~3 chips per row)
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-2 py-1.5 border border-neutral-200 rounded-md text-xs"
+                                      >
+                                        <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                                          {message.fileReviewLoadingState?.isLoading && idx >= (message.fileReviewLoadingState?.loadedFiles || 0) ? (
+                                            <LoaderCircle className="w-4 h-4 animate-spin text-neutral-600" />
+                                          ) : file.type === 'pdf' ? (
+                                            <Image src="/pdf-icon.svg" alt="PDF" width={16} height={16} />
+                                          ) : file.type === 'docx' ? (
+                                            <Image src="/docx-icon.svg" alt="DOCX" width={16} height={16} />
+                                          ) : file.type === 'spreadsheet' ? (
+                                            <Image src="/xlsx-icon.svg" alt="Spreadsheet" width={16} height={16} />
+                                          ) : file.type === 'folder' ? (
+                                            <Image src="/folderIcon.svg" alt="Folder" width={16} height={16} />
+                                          ) : (
+                                            <Image src="/file.svg" alt="File" width={16} height={16} />
+                                          )}
+                                        </div>
+                                        <span className="text-neutral-700 truncate max-w-[200px]">{file.name}</span>
+                                      </motion.div>
+                                    ))}
+                                    {message.fileReviewContent.totalFiles > message.fileReviewContent.files.length && (
+                                      <motion.button 
+                                        initial={{ opacity: 0, y: 4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ 
+                                          duration: 0.2, 
+                                          ease: "easeOut",
+                                          delay: Math.floor(message.fileReviewContent.files.length / 3) * 0.1
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-2 py-1.5 text-xs text-neutral-600 hover:text-neutral-800 transition-colors"
+                                      >
+                                        View all
+                                      </motion.button>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              }
+                              defaultOpen={false}
+                              isLoading={message.fileReviewLoadingState?.isLoading}
+                            />
+                          </motion.div>
+                        </AnimatePresence>
+                        )}
+                        
+                        {/* File review completion message */}
+                        {message.fileReviewLoadingState && !message.fileReviewLoadingState.isLoading && message.showFileReview && (
+                          <AnimatePresence>
+                            <motion.div 
+                              className="mt-1 text-neutral-900 leading-relaxed pl-2"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            >
+                              Perfect, I&apos;ve reviewed all the files that you&apos;ve provided. I&apos;ve managed to already identify key information that will be essential for drafting your S-1 registration statement, including business operations, financial data, risk factors, and material agreements. I&apos;ll help you generate a draft of the S-1 shell.
+                            </motion.div>
+                          </AnimatePresence>
+                        )}
+                        
+                        {/* Draft Generation Thinking State */}
+                        {message.showDraftGeneration && (
+                          <AnimatePresence>
+                            <motion.div 
+                              className="mt-3.5"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            >
+                              <ThinkingState
+                                variant="draft"
+                                title={message.draftGenerationLoadingState?.isLoading ? "Generating draft..." : "Generated draft"}
+                                durationSeconds={undefined}
+                                summary={message.draftGenerationLoadingState?.showSummary || !message.draftGenerationLoadingState?.isLoading ? getThinkingContent('draft').summary : undefined}
+                                bullets={message.draftGenerationLoadingState?.isLoading 
+                                  ? getThinkingContent('draft').bullets?.slice(0, message.draftGenerationLoadingState?.visibleBullets || 0)
+                                  : getThinkingContent('draft').bullets
+                                }
+                                defaultOpen={false}
+                                isLoading={message.draftGenerationLoadingState?.isLoading}
+                                icon={FilePen}
+                              />
+                              
+                              {/* Draft Artifact Card - show after generation completes */}
+                              {!message.draftGenerationLoadingState?.isLoading && message.artifactData && (
+                                <motion.div 
+                                  className="mt-2.5 pl-2"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+                                >
+                                  <ArtifactCard
+                                    key={`artifact-${message.artifactData.title}-${unifiedArtifactPanelOpen}`}
+                                    title={message.artifactData.title}
+                                    subtitle={message.artifactData.subtitle}
+                                    variant={unifiedArtifactPanelOpen ? 'small' : 'large'}
+                                    isSelected={unifiedArtifactPanelOpen && (
+                                      currentArtifactType === 'draft' && message.artifactData?.variant === 'draft' && selectedDraftArtifact?.title === message.artifactData?.title
+                                    )}
+                                    showSources={true}
+                                    onClick={() => {
+                                      const artifactType = 'draft';
+                                      const artifactData = {
+                                        title: message.artifactData?.title || 'Artifact',
+                                        subtitle: message.artifactData?.subtitle || ''
+                                      };
+                                      
+                                      setCurrentArtifactType(artifactType);
+                                      setUnifiedArtifactPanelOpen(true);
+                                      setSelectedDraftArtifact(artifactData);
+                                      setDraftArtifactPanelOpen(true);
+                                    }}
+                                  />
+                                </motion.div>
+                              )}
+                            </motion.div>
+                          </AnimatePresence>
+                        )}
+                        
                         {/* Workflow shortcut buttons */}
-                        {message.isWorkflowResponse && message.workflowTitle?.toLowerCase().includes('s-1') && (
-                          <div className="pl-2 mt-4">
-                            <div className="flex flex-wrap gap-2">
+                        {message.isWorkflowResponse && message.workflowTitle?.toLowerCase().includes('s-1') && !messages.some(msg => msg.type === 'files') && (
+                              <div className="pl-2 mt-4">
+                                <div className="flex flex-wrap gap-2">
                               <button 
                                 className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
                                 onClick={() => setIsFileManagementOpen(true)}
@@ -1243,8 +1427,8 @@ export default function AssistantChatPage({
                               >
                                 <span className="text-neutral-900 text-sm font-medium">Skip</span>
                               </button>
-                            </div>
-                          </div>
+                                </div>
+                              </div>
                         )}
                         
                         {/* Sources section for legal analysis */}
@@ -1306,10 +1490,55 @@ export default function AssistantChatPage({
                     
                     {/* User message content */}
                     {message.role === 'user' && (
-                      <>
-                        <div className="text-neutral-900 leading-relaxed pl-2">
-                          {message.content}
-                        </div>
+                      <AnimatePresence>
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                        {message.type === 'files' && message.filesData ? (
+                          <div className="pl-2">
+                            <div className="text-neutral-900 leading-relaxed mb-3">
+                              I&apos;ve uploaded some files from iManage
+                            </div>
+                            <div className="border border-neutral-200 rounded-lg px-3 py-1">
+                              <div className="space-y-0.5">
+                              {message.filesData.slice(0, 4).map((file) => (
+                                <div 
+                                  key={file.id} 
+                                  className="flex items-center gap-2 h-8 px-2 -mx-2 rounded-md hover:bg-neutral-100 transition-colors cursor-pointer min-w-0"
+                                >
+                                  <div className="flex-shrink-0">
+                                    {file.name.toLowerCase().endsWith('.pdf') ? (
+                                      <Image src="/pdf-icon.svg" alt="PDF" width={16} height={16} />
+                                    ) : file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc') ? (
+                                      <Image src="/docx-icon.svg" alt="DOCX" width={16} height={16} />
+                                    ) : file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls') ? (
+                                      <Image src="/xlsx-icon.svg" alt="Spreadsheet" width={16} height={16} />
+                                    ) : file.type === 'folder' ? (
+                                      <Image src="/folderIcon.svg" alt="Folder" width={16} height={16} />
+                                    ) : (
+                                      <Image src="/file.svg" alt="File" width={16} height={16} />
+                                    )}
+                                  </div>
+                                  <span className="text-sm text-neutral-900 truncate flex-1">{file.name}</span>
+                                </div>
+                              ))}
+                              {message.filesData.length > 4 && (
+                                <div className="flex items-center gap-2 h-8 px-2 -mx-2 rounded-md hover:bg-neutral-100 transition-colors cursor-pointer">
+                                  <div className="text-sm text-neutral-500">
+                                    View {message.filesData.length - 4} more...
+                                  </div>
+                                </div>
+                              )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-neutral-900 leading-relaxed pl-2">
+                            {message.content}
+                          </div>
+                        )}
                         {/* Ghost buttons for user messages */}
                         <div className="flex items-center mt-2">
                           <button className="text-xs text-neutral-700 hover:text-neutral-800 hover:bg-neutral-100 transition-colors rounded-sm px-2 py-1 flex items-center gap-1.5">
@@ -1325,7 +1554,8 @@ export default function AssistantChatPage({
                             Edit query
                           </button>
                         </div>
-                      </>
+                        </motion.div>
+                      </AnimatePresence>
                     )}
                   </div>
                 </div>
@@ -1635,9 +1865,325 @@ export default function AssistantChatPage({
         isOpen={isiManagePickerOpen} 
         onClose={() => setIsiManagePickerOpen(false)} 
         onFilesSelected={(files) => {
-          console.log('Selected files from iManage:', files);
-          // Handle selected files here
-          toast.success(`Added ${files.length} file${files.length === 1 ? '' : 's'} from iManage`);
+          // Set loading state immediately
+          setIsLoading(true);
+          
+          // Add the files as a user message
+          setMessages(prev => [...prev, {
+            role: 'user' as const,
+            content: '',
+            type: 'files' as const,
+            filesData: files
+          }]);
+
+          
+          // Scroll to bottom
+          setTimeout(() => {
+            messagesContainerRef.current?.scrollTo({
+              top: messagesContainerRef.current.scrollHeight,
+              behavior: 'smooth'
+            });
+          }, 100);
+
+          // Add AI response with thinking states after a delay
+          setTimeout(() => {
+            // Get thinking content for file processing
+            const thinkingContent = {
+              summary: "The user has uploaded documents that I need to process and review thoroughly. I'll analyze each document to extract key information, identify relevant sections for S-1 filing requirements that will be essential for drafting a comprehensive S-1 statement.",
+              bullets: [
+                "Understand the business structure and financials",
+                "Locate risk factors and material agreements", 
+                "Compile insights for risk"
+              ],
+              additionalText: ""
+            };
+
+            // Initialize loading state
+            const loadingState = {
+              showSummary: false,
+              visibleBullets: 0,
+              showAdditionalText: false
+            };
+
+            // Add assistant message with thinking states
+            const assistantMessage = {
+              role: 'assistant' as const,
+              content: '',
+              type: 'text' as const,
+              thinkingContent,
+              loadingState,
+              isLoading: true
+            };
+
+            setMessages(prev => [...prev, assistantMessage]);
+
+            // Scroll to bottom
+            setTimeout(() => {
+              messagesContainerRef.current?.scrollTo({
+                top: messagesContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+              });
+            }, 100);
+
+            // Progressive reveal of thinking states
+            // Show the summary first
+            setTimeout(() => {
+              setMessages(prev => prev.map((msg, idx) => 
+                idx === prev.length - 1 && msg.role === 'assistant' && msg.isLoading && msg.loadingState
+                  ? { ...msg, loadingState: { ...msg.loadingState, showSummary: true } }
+                  : msg
+              ));
+              scrollToBottom();
+            }, 600);
+            
+            // Then show bullets progressively
+            thinkingContent.bullets.forEach((_, bulletIdx) => {
+              setTimeout(() => {
+                setMessages(prev => prev.map((msg, idx) => 
+                  idx === prev.length - 1 && msg.role === 'assistant' && msg.isLoading && msg.loadingState
+                    ? { ...msg, loadingState: { ...msg.loadingState, visibleBullets: bulletIdx + 1 } }
+                    : msg
+                ));
+                scrollToBottom();
+              }, 1000 + (bulletIdx * 400));
+            });
+
+            // After thinking completes, show the actual response
+            setTimeout(() => {
+              setMessages(prev => prev.map((msg, idx) => {
+                if (idx === prev.length - 1 && msg.role === 'assistant' && msg.isLoading) {
+                  return {
+                    ...msg,
+                    content: `Thank you for uploading the files. I'm currently processing and reviewing the documents to understand their content and context. I'll provide you with a summary and insights shortly.`,
+                    isLoading: false,
+                    loadingState: undefined,
+                    // Don't show file review immediately, we'll add it with animation
+                    showFileReview: false
+                  };
+                }
+                return msg;
+              }));
+
+              // Final scroll
+              setTimeout(() => {
+                messagesContainerRef.current?.scrollTo({
+                  top: messagesContainerRef.current.scrollHeight,
+                  behavior: 'smooth'
+                });
+              }, 100);
+              
+              // Show file review thinking state after a delay
+              setTimeout(() => {
+                // First, get the files to review
+                let reviewFiles: Array<{name: string, type: 'pdf' | 'docx' | 'spreadsheet' | 'folder' | 'text'}> = [];
+                let uploadedFilesCount = 0;
+                
+                setMessages(prev => {
+                  // Find the user file message from the current state
+                  const userFileMsg = prev.find((msg, i) => 
+                    i === prev.length - 2 && msg.role === 'user' && msg.type === 'files' && msg.filesData
+                  );
+                  
+                  const uploadedFiles = userFileMsg?.filesData || files || [];
+                  uploadedFilesCount = uploadedFiles.length;
+                  
+                  // Convert uploaded files to the format needed for file review
+                  reviewFiles = uploadedFiles.length > 0 ? uploadedFiles.slice(0, 9).map(file => {
+                    const fileName = file.name.toLowerCase();
+                    let fileType: 'pdf' | 'docx' | 'spreadsheet' | 'folder' | 'text' = 'text';
+                    
+                    // Check if it's a folder first
+                    if (file.type === 'folder') {
+                      fileType = 'folder';
+                    } else if (fileName.endsWith('.pdf')) {
+                      fileType = 'pdf';
+                    } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+                      fileType = 'docx';
+                    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                      fileType = 'spreadsheet';
+                    } else if (fileName.endsWith('.txt') || file.type === 'file') {
+                      fileType = 'text';
+                    }
+                    
+                    return {
+                      name: file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name,
+                      type: fileType
+                    };
+                  }) : [];
+                  
+                  return prev.map((msg, idx) => {
+                    if (idx === prev.length - 1 && msg.role === 'assistant') {
+                      return {
+                        ...msg,
+                        showFileReview: true,
+                        fileReviewContent: {
+                          summary: "I will review all the uploaded documents to extract key information needed for the S-1 registration statement, including business operations, financial data, risk factors, and material agreements.",
+                          files: reviewFiles,
+                          totalFiles: uploadedFilesCount
+                        },
+                      fileReviewLoadingState: {
+                        isLoading: true,
+                        loadedFiles: 0
+                      }
+                    };
+                  }
+                  return msg;
+                  });
+                });
+                  
+                // Scroll after file review appears
+                setTimeout(() => {
+                  messagesContainerRef.current?.scrollTo({
+                    top: messagesContainerRef.current.scrollHeight,
+                    behavior: 'smooth'
+                  });
+                }, 100);
+                  
+                // Progressively load each file from the actual uploaded files
+                reviewFiles.forEach((_, fileIdx) => {
+                  setTimeout(() => {
+                    setMessages(prev => prev.map((msg, idx) => {
+                      if (idx === prev.length - 1 && msg.role === 'assistant' && msg.fileReviewLoadingState) {
+                        return {
+                          ...msg,
+                          fileReviewLoadingState: {
+                            ...msg.fileReviewLoadingState,
+                            loadedFiles: fileIdx + 1
+                          }
+                        };
+                      }
+                      return msg;
+                    }));
+                  }, 1000 + (fileIdx * 300)); // Load each file every 300ms
+                });
+                  
+                // After all files are loaded, complete the review
+                const reviewFileCount = reviewFiles.length;
+                const reviewFilesCompleteDelay = 1000 + (reviewFileCount * 300) + 500;
+                setTimeout(() => {
+                  setMessages(prev => prev.map((msg, idx) => {
+                    if (idx === prev.length - 1 && msg.role === 'assistant') {
+                      return {
+                        ...msg,
+                        fileReviewLoadingState: {
+                          isLoading: false,
+                          loadedFiles: reviewFileCount
+                        }
+                      };
+                    }
+                    return msg;
+                  }));
+                  
+                  // Scroll after file review completes
+                  setTimeout(() => {
+                    messagesContainerRef.current?.scrollTo({
+                      top: messagesContainerRef.current.scrollHeight,
+                      behavior: 'smooth'
+                    });
+                  }, 100);
+                  
+                  // Show draft generation thinking state after a delay
+                  setTimeout(() => {
+                    setMessages(prev => prev.map((msg, idx) => {
+                      if (idx === prev.length - 1 && msg.role === 'assistant') {
+                        return {
+                          ...msg,
+                          showDraftGeneration: true,
+                          draftGenerationLoadingState: {
+                            isLoading: true,
+                            showSummary: false,
+                            visibleBullets: 0
+                          }
+                        };
+                      }
+                      return msg;
+                    }));
+                    
+                    // Scroll to show draft generation
+                    setTimeout(() => {
+                      messagesContainerRef.current?.scrollTo({
+                        top: messagesContainerRef.current.scrollHeight,
+                        behavior: 'smooth'
+                      });
+                    }, 100);
+                    
+                    // Progressive reveal of draft generation content
+                    // Show summary after 600ms
+                    setTimeout(() => {
+                      setMessages(prev => prev.map((msg, idx) => {
+                        if (idx === prev.length - 1 && msg.role === 'assistant' && msg.draftGenerationLoadingState?.isLoading) {
+                          return {
+                            ...msg,
+                            draftGenerationLoadingState: {
+                              ...msg.draftGenerationLoadingState,
+                              showSummary: true
+                            }
+                          };
+                        }
+                        return msg;
+                      }));
+                    }, 600);
+                    
+                    // Show bullets progressively
+                    const draftBullets = getThinkingContent('draft').bullets;
+                    draftBullets.forEach((_, bulletIdx) => {
+                      setTimeout(() => {
+                        setMessages(prev => prev.map((msg, idx) => {
+                          if (idx === prev.length - 1 && msg.role === 'assistant' && msg.draftGenerationLoadingState?.isLoading) {
+                            return {
+                              ...msg,
+                              draftGenerationLoadingState: {
+                                ...msg.draftGenerationLoadingState,
+                                visibleBullets: bulletIdx + 1
+                              }
+                            };
+                          }
+                          return msg;
+                        }));
+                      }, 1200 + (bulletIdx * 400)); // Start at 1.2s, then 400ms between each bullet
+                    });
+                    
+                    // Complete draft generation after some time
+                    setTimeout(() => {
+                      setMessages(prev => prev.map((msg, idx) => {
+                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                          return {
+                            ...msg,
+                            artifactData: {
+                              title: "ValarAI S-1 Statement Shell",
+                              subtitle: "Draft document with key sections and placeholders",
+                              variant: 'draft'
+                            },
+                            draftGenerationLoadingState: {
+                              isLoading: false,
+                              showSummary: true,
+                              visibleBullets: getThinkingContent('draft').bullets.length
+                            }
+                          };
+                        }
+                        return msg;
+                      }));
+                      
+                      // Automatically open the draft artifact panel after a delay
+                      setTimeout(() => {
+                        setSelectedDraftArtifact({
+                          title: "ValarAI S-1 Statement Shell",
+                          subtitle: "Draft document with key sections and placeholders"
+                        });
+                        setCurrentArtifactType('draft');
+                        setUnifiedArtifactPanelOpen(true);
+                      }, 800); // Delay to let artifact card appear and animate first
+                      
+                      // Final set loading to false
+                      setTimeout(() => {
+                        setIsLoading(false);
+                      }, 1200); // After panel opens
+                    }, 4000); // 4 seconds for draft generation
+                  }, 800); // Show draft generation 800ms after file review completes
+                }, reviewFilesCompleteDelay); // After all files + buffer
+              }, 600); // Show file review state 600ms after content appears
+            }, 2400); // Total time for thinking states to complete (summary + 3 bullets)
+          }, 1000);
         }}
       />
         </div>

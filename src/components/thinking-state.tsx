@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, ChevronDown, ChevronRight } from "lucide-react";
+import { Brain, ChevronDown, ChevronRight, LucideIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TextShimmer } from "../../components/motion-primitives/text-shimmer";
 
@@ -49,12 +49,20 @@ export interface ThinkingStateProps {
    * If true, shows a pulsing animation on the icon
    */
   isLoading?: boolean;
+  /**
+   * Optional custom icon to use instead of Brain
+   */
+  icon?: LucideIcon;
+  /**
+   * Optional custom content to render after additionalText
+   */
+  customContent?: React.ReactNode;
 }
 
-function getVariantIcon(isLoading?: boolean) {
-  // Always use the same brain icon regardless of variant
+function getVariantIcon(isLoading?: boolean, CustomIcon?: LucideIcon) {
+  const Icon = CustomIcon || Brain;
   return (
-    <Brain 
+    <Icon 
       className={`w-3.5 h-3.5 ${isLoading ? 'animate-pulse' : ''}`} 
     />
   );
@@ -100,24 +108,34 @@ export default function ThinkingState({
   isChild = false,
   childStates = [],
   isLoading = false,
+  icon,
+  customContent,
 }: ThinkingStateProps) {
   // When loading, always show expanded, otherwise use defaultOpen
   const [open, setOpen] = useState<boolean>(isLoading || defaultOpen || isChild);
   const [isHovered, setIsHovered] = useState<boolean>(false);
 
+  // Track previous loading state to detect transitions
+  const [wasLoading, setWasLoading] = useState(isLoading);
+  
   // Handle open state based on loading
   useEffect(() => {
     if (isLoading) {
       // Always open when loading
       setOpen(true);
-    } else if (!isChild && defaultOpen === false) {
-      // Give a small delay before collapsing to show the final state
+      setWasLoading(true);
+    } else if (!isChild && wasLoading && !isLoading) {
+      // We just finished loading - collapse after delay
+      setWasLoading(false);
       const timer = setTimeout(() => {
         setOpen(false);
       }, 800); // Slightly longer delay to see the complete state
       return () => clearTimeout(timer);
+    } else if (!isChild && defaultOpen !== undefined) {
+      // Use defaultOpen for initial state
+      setOpen(defaultOpen);
     }
-  }, [isLoading, defaultOpen, isChild]);
+  }, [isLoading, defaultOpen, isChild, wasLoading]);
 
   const headerLabel = isChild ? title : `${title}${durationSeconds ? ` for ${formatDuration(durationSeconds)}` : ""}`;
 
@@ -128,12 +146,12 @@ export default function ThinkingState({
         onClick={isChild ? undefined : () => setOpen(!open)}
         onMouseEnter={isChild ? undefined : () => setIsHovered(true)}
         onMouseLeave={isChild ? undefined : () => setIsHovered(false)}
-        className={`w-full flex items-start gap-1.5 text-[13px] leading-5 text-neutral-700 py-0 ${!isChild ? 'hover:opacity-80 transition-opacity cursor-pointer px-0' : 'cursor-default px-0'}`}
+        className={`w-full flex items-start gap-1.5 text-[13px] leading-5 text-neutral-500 py-0 ${!isChild ? 'hover:opacity-80 transition-opacity cursor-pointer px-0' : 'cursor-default px-0'}`}
       >
-        <span className="relative flex items-center justify-center text-neutral-700 mt-0.5 w-3.5 h-3.5">
+        <span className="relative flex items-center justify-center text-neutral-500 mt-0.5 w-3.5 h-3.5">
           {isChild ? (
             // Child states always show their variant icon
-            getVariantIcon(isLoading)
+            getVariantIcon(isLoading, icon)
           ) : (
             // Parent states have animated icon transitions
             <AnimatePresence mode="wait">
@@ -168,7 +186,7 @@ export default function ThinkingState({
                   transition={{ duration: 0.15, ease: "easeOut" }}
                   className="absolute inset-0 flex items-center justify-center"
                 >
-                  {getVariantIcon(isLoading)}
+                  {getVariantIcon(isLoading, icon)}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -245,7 +263,7 @@ export default function ThinkingState({
             initial={isChild ? undefined : { height: 0, opacity: 0 }}
             animate={isChild ? undefined : { height: "auto", opacity: 1 }}
             exit={isChild ? undefined : { height: 0, opacity: 0 }}
-            transition={isChild ? undefined : { duration: 0.18, ease: "easeOut" }}
+            transition={isChild ? undefined : { duration: 0.3, ease: "easeOut" }}
             className="overflow-hidden relative"
           >
             {/* Vertical line from chevron */}
@@ -310,6 +328,20 @@ export default function ThinkingState({
                   >
                     {additionalText}
                   </motion.p>
+                )}
+              </AnimatePresence>
+              
+              <AnimatePresence>
+                {customContent && (
+                  <motion.div
+                    key="custom"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  >
+                    {customContent}
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>

@@ -35,8 +35,8 @@ interface DraftArtifactPanelProps {
 }
 
 const PANEL_ANIMATION = {
-  duration: 0.3,
-  ease: "easeOut" as const
+  duration: 0.8,
+  ease: [0.4, 0.0, 0.2, 1] as const // Custom cubic-bezier for smooth acceleration
 };
 
 export default function DraftArtifactPanel({
@@ -83,17 +83,316 @@ export default function DraftArtifactPanel({
       }),
     ],
     content: `
-      <p><strong>Memorandum</strong></p>
-      <p><strong>To:</strong> [INSERT RECIPIENT NAME AND TITLE]<br/>
-      <strong>From:</strong> [INSERT AUTHOR NAME AND TITLE]<br/>
-      <strong>Date:</strong> [INSERT DATE]<br/>
-      <strong>Re:</strong> [INSERT CONCISE STATEMENT OF SUBJECT/ISSUE]</p>
-      <p><strong>Question Presented</strong></p>
-      <p>[Begin this introductory paragraph with a single sentence that crisply states the dispositive legal question on which guidance is sought. Follow with any necessary subordinate questions or clarifications, phrased so that each may be answered "yes" or "no." Conclude with a sentence identifying any jurisdictional or procedural posture relevant to the inquiry.]</p>
-      <p><strong>Brief Answer</strong></p>
-      <p>[Provide a direct, bottom-line response to each question in the order posed above, prefacing each answer with "Yes," "No," or, where appropriate, "Likely," followed by a succinct explanation—typically no more than two or three sentences—summarizing the controlling authority, critical facts, and key reasoning.]</p>
-      <p><strong>Facts</strong></p>
-      <p>[Set forth an objective, chronologically organized statement of all facts material to the analysis, avoiding legal conclusions or argument. Where the record is incomplete or certain facts remain unverified, flag them expressly and note any assumptions made for purposes of the memorandum. If multiple factual scenarios have been contemplated, delineate each separately, always maintaining a neutral tone.]</p>
+      <h2>UNITED STATES</h2>
+      <h3>SECURITIES AND EXCHANGE COMMISSION</h3>
+      <h3>Washington, D.C. 20549</h3>
+      <hr/>
+      <h3>FORM S-1</h3>
+      <h3>REGISTRATION STATEMENT UNDER THE SECURITIES ACT OF 1933</h3>
+      <hr/>
+      
+      <table>
+        <tr>
+          <td><strong>VALAR AI, INC.</strong><br/>
+          <td><strong>Delaware Corporation</strong><br/>
+          <td><strong>9872398729</strong>
+        </tr>
+      </table>
+      
+      <p><strong>1234 Main Street, Suite 2900</strong><br/>
+      <strong>San Francisco, CA 94105</strong><br/>
+      <strong>123-456-7890</strong><br/>
+      
+      <p><strong>Paul, Weiss, Rifkind, Wharton & Garrison LLP</strong><br/>
+      <strong>535 Mission St</strong><br/>
+      <strong>San Francisco, CA 94105</strong><br/>
+      <strong>628-432-5100</strong><br/>
+      
+      <hr/>
+      
+      <p><strong>Approximate date of commencement of proposed sale of the securities to the public:</strong> As soon as practicable after the effective date of this registration statement.</p>
+      
+      <p>If any of the securities being registered on this Form are to be offered on a delayed or continuous basis pursuant to Rule 415 under the Securities Act of 1933, check the following box</p>
+      
+      <p>If this Form is filed to register additional securities for an offering pursuant to Rule 462(b) under the Securities Act, please check the following box and list the Securities Act registration statement number of the earlier effective registration statement for the same offering.</p>
+      
+      <p>If this Form is a post-effective amendment filed pursuant to Rule 462(c) under the Securities Act, check the following box and list the Securities Act registration statement number of the earlier effective registration statement for the same offering.</p>
+      
+      <p>If this Form is a post-effective amendment filed pursuant to Rule 462(d) under the Securities Act, check the following box and list the Securities Act registration statement number of the earlier effective registration statement for the same offering.</p>
+      
+      <p>Indicate by check mark whether the registrant is a large accelerated filer, an accelerated filer, a non-accelerated filer, smaller reporting company, or an emerging growth company. See the definitions of "large accelerated filer," "accelerated filer," "smaller reporting company," and "emerging growth company" in Rule 12b-2 of the Exchange Act.</p>
+      
+      <table>
+        <tr>
+          <td><strong>Large accelerated filer</strong> ☐</td>
+          <td><strong>Accelerated filer</strong> ☐</td>
+        </tr>
+        <tr>
+          <td><strong>Non-accelerated filer</strong> ☐</td>
+          <td><strong>Smaller reporting company</strong> ☐</td>
+        </tr>
+        <tr>
+          <td><strong>Emerging growth company</strong> ☐</td>
+          <td></td>
+        </tr>
+      </table>
+      
+      <p>If an emerging growth company, indicate by check mark if the registrant has elected not to use the extended transition period for complying with any new or revised financial accounting standards provided pursuant to Section 7(a)(2)(B) of the Securities Act. ☐</p>
+      
+      <hr/>
+      
+      <h3>CALCULATION OF REGISTRATION FEE</h3>
+      
+      <table>
+        <thead>
+          <tr>
+            <th><strong>Title of Each Class of Securities to be Registered</strong></th>
+            <th><strong>Amount to be Registered</strong></th>
+            <th><strong>Proposed Maximum Offering Price Per Share</strong></th>
+            <th><strong>Proposed Maximum Aggregate Offering Price</strong></th>
+            <th><strong>Amount of Registration Fee</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Common Stock, $[Par Value] par value per share</td>
+            <td>[Number] shares</td>
+            <td>$[Price]</td>
+            <td>$[Total]</td>
+            <td>$[Fee]</td>
+          </tr>
+          <tr>
+            <td><strong>Total</strong></td>
+            <td></td>
+            <td></td>
+            <td>$[Total]</td>
+            <td>$[Total Fee]</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <p><em>(1) Estimated solely for the purpose of calculating the registration fee pursuant to Rule 457(o) under the Securities Act of 1933.</em><br/>
+      <em>(2) Calculated pursuant to Rule 457(o) based on an estimate of the proposed maximum aggregate offering price.</em></p>
+      
+      <hr/>
+      
+      <h3>SUBJECT TO COMPLETION, DATED [DATE]</h3>
+      
+      <h3>PRELIMINARY PROSPECTUS</h3>
+      
+      <p><strong>[NUMBER] Shares</strong></p>
+      
+      <h3>[COMPANY NAME], INC.</h3>
+      <h3>Common Stock</h3>
+      
+      <hr/>
+      
+      <p>This is [Company Name], Inc.'s initial public offering. Prior to this offering, there has been no public market for our common stock.</p>
+      
+      <p>The initial public offering price is expected to be between $[Low] and $[High] per share. We have applied to list our common stock on the [Exchange] under the symbol "[SYMBOL]."</p>
+      
+      <p><strong>We are an "emerging growth company" as defined under the federal securities laws and will be subject to reduced public company reporting requirements.</strong></p>
+      
+      <p>Investing in our common stock involves risks. See "Risk Factors" beginning on page [X].</p>
+      
+      <hr/>
+      
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th><strong>Per Share</strong></th>
+            <th><strong>Total</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Public offering price</strong></td>
+            <td>$[Price]</td>
+            <td>$[Total]</td>
+          </tr>
+          <tr>
+            <td><strong>Underwriting discounts and commissions</strong></td>
+            <td>$[Discount]</td>
+            <td>$[Total Discount]</td>
+          </tr>
+          <tr>
+            <td><strong>Proceeds to [Company Name], before expenses</strong></td>
+            <td>$[Net]</td>
+            <td>$[Total Net]</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <p><em>(1) See "Underwriting" for a description of the compensation payable to the underwriters.</em></p>
+      
+      <p>We have granted the underwriters an option to purchase up to an additional [number] shares of common stock at the public offering price, less underwriting discounts and commissions, to cover over-allotments.</p>
+      
+      <p>The Securities and Exchange Commission and state securities regulators have not approved or disapproved these securities, or determined if this prospectus is truthful or complete. Any representation to the contrary is a criminal offense.</p>
+      
+      <p>The shares will be ready for delivery on or about [Date].</p>
+      
+      <hr/>
+      
+      <p><strong>Lead Book-Running Manager</strong><br/>
+      <strong>[UNDERWRITER NAME]</strong></p>
+      
+      <p><strong>Book-Running Managers</strong><br/>
+      <strong>[UNDERWRITER 2]</strong> | <strong>[UNDERWRITER 3]</strong></p>
+      
+      <p><strong>Co-Managers</strong><br/>
+      <strong>[CO-MANAGER 1]</strong> | <strong>[CO-MANAGER 2]</strong> | <strong>[CO-MANAGER 3]</strong></p>
+      
+      <hr/>
+      
+      <p>The date of this prospectus is [Date].</p>
+      
+      <hr/>
+      
+      <h3>TABLE OF CONTENTS</h3>
+      
+      <table>
+        <tbody>
+          <tr><td><strong>PROSPECTUS SUMMARY</strong></td><td>1</td></tr>
+          <tr><td><strong>RISK FACTORS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>SPECIAL NOTE REGARDING FORWARD-LOOKING STATEMENTS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>USE OF PROCEEDS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>DIVIDEND POLICY</strong></td><td>[X]</td></tr>
+          <tr><td><strong>CAPITALIZATION</strong></td><td>[X]</td></tr>
+          <tr><td><strong>DILUTION</strong></td><td>[X]</td></tr>
+          <tr><td><strong>SELECTED CONSOLIDATED FINANCIAL DATA</strong></td><td>[X]</td></tr>
+          <tr><td><strong>MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>BUSINESS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>MANAGEMENT</strong></td><td>[X]</td></tr>
+          <tr><td><strong>EXECUTIVE COMPENSATION</strong></td><td>[X]</td></tr>
+          <tr><td><strong>CERTAIN RELATIONSHIPS AND RELATED PARTY TRANSACTIONS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>PRINCIPAL STOCKHOLDERS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>DESCRIPTION OF CAPITAL STOCK</strong></td><td>[X]</td></tr>
+          <tr><td><strong>SHARES ELIGIBLE FOR FUTURE SALE</strong></td><td>[X]</td></tr>
+          <tr><td><strong>MATERIAL U.S. FEDERAL INCOME TAX CONSEQUENCES TO NON-U.S. HOLDERS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>UNDERWRITING</strong></td><td>[X]</td></tr>
+          <tr><td><strong>LEGAL MATTERS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>EXPERTS</strong></td><td>[X]</td></tr>
+          <tr><td><strong>WHERE YOU CAN FIND MORE INFORMATION</strong></td><td>[X]</td></tr>
+          <tr><td><strong>INDEX TO CONSOLIDATED FINANCIAL STATEMENTS</strong></td><td>F-1</td></tr>
+        </tbody>
+      </table>
+      
+      <hr/>
+      
+      <h3>PROSPECTUS SUMMARY</h3>
+      
+      <p>This summary highlights information contained elsewhere in this prospectus. This summary does not contain all of the information you should consider before investing in our common stock. You should read the entire prospectus carefully, including "Risk Factors" and our consolidated financial statements and related notes included elsewhere in this prospectus, before making an investment decision.</p>
+      
+      <h3>Our Company</h3>
+      
+      <p><strong>[Provide 2-3 paragraph overview of the company, its business model, key products/services, target markets, competitive advantages, and growth strategy]</strong></p>
+      
+      <h3>Our Market Opportunity</h3>
+      
+      <p><strong>[Describe the market size, growth trends, and company's addressable market opportunity]</strong></p>
+      
+      <h3>Our Competitive Strengths</h3>
+      
+      <p><strong>[List 4-6 key competitive advantages with brief explanations]</strong></p>
+      
+      <h3>Our Growth Strategy</h3>
+      
+      <p><strong>[Outline 3-5 key elements of growth strategy]</strong></p>
+      
+      <h3>Summary Risk Factors</h3>
+      
+      <p><strong>[List 8-12 primary risk factors that could materially affect the business]</strong></p>
+      
+      <h3>Corporate Information</h3>
+      
+      <p>We were incorporated in [State] in [Year]. Our principal executive offices are located at [Address]. Our telephone number is [Phone]. Our website address is [Website]. Information contained on, or accessible through, our website is not incorporated by reference into this prospectus, and you should not consider information on our website to be part of this prospectus.</p>
+      
+      <h3>The Offering</h3>
+      
+      <table>
+        <tbody>
+          <tr><td><strong>Common stock offered by us</strong></td><td>[Number] shares</td></tr>
+          <tr><td><strong>Common stock to be outstanding after this offering</strong></td><td>[Number] shares</td></tr>
+          <tr><td><strong>Over-allotment option</strong></td><td>[Number] shares</td></tr>
+          <tr><td><strong>Use of proceeds</strong></td><td>[Brief description]</td></tr>
+          <tr><td><strong>Risk factors</strong></td><td>See "Risk Factors" and other information in this prospectus</td></tr>
+          <tr><td><strong>Proposed [Exchange] symbol</strong></td><td>"[SYMBOL]"</td></tr>
+        </tbody>
+      </table>
+      
+      <p><em>(The number of shares of common stock to be outstanding after this offering is based on [number] shares of common stock outstanding as of [Date] and excludes [details of excluded securities])</em></p>
+      
+      <hr/>
+      
+      <h3>RISK FACTORS</h3>
+      
+      <p>Investing in our common stock involves a high degree of risk. You should carefully consider the risks and uncertainties described below, together with all of the other information in this prospectus, including our consolidated financial statements and related notes, before deciding to invest in our common stock. If any of the following risks actually occurs, our business, financial condition, results of operations, and prospects could be materially and adversely affected. In that event, the market price of our common stock could decline, and you could lose part or all of your investment.</p>
+      
+      <h3>Risks Related to Our Business and Industry</h3>
+      
+      <p><strong>[Include 15-25 specific risk factors relevant to the company and industry]</strong></p>
+      
+      <h3>Risks Related to Our Organizational Structure</h3>
+      
+      <p><strong>[Include relevant risks related to corporate structure, governance, etc.]</strong></p>
+      
+      <h3>Risks Related to This Offering and Ownership of Our Common Stock</h3>
+      
+      <p><strong>[Include risks related to public company status, stock price volatility, etc.]</strong></p>
+      
+      <hr/>
+      
+      <h3>SPECIAL NOTE REGARDING FORWARD-LOOKING STATEMENTS</h3>
+      
+      <p><strong>[Standard forward-looking statements disclaimer]</strong></p>
+      
+      <hr/>
+      
+      <h3>USE OF PROCEEDS</h3>
+      
+      <p>We estimate that the net proceeds to us from this offering will be approximately $[Amount] (or approximately $[Amount] if the underwriters exercise their over-allotment option in full), based on an assumed initial public offering price of $[Price] per share, after deducting estimated underwriting discounts and commissions and estimated offering expenses payable by us.</p>
+      
+      <p><strong>[Provide detailed breakdown of use of proceeds with specific percentages and amounts]</strong></p>
+      
+      <hr/>
+      
+      <h3>DIVIDEND POLICY</h3>
+      
+      <p><strong>[Describe current dividend policy and any restrictions on paying dividends]</strong></p>
+      
+      <hr/>
+      
+      <h3>CAPITALIZATION</h3>
+      
+      <p><strong>[Include capitalization table showing before and after the offering]</strong></p>
+      
+      <hr/>
+      
+      <h3>DILUTION</h3>
+      
+      <p><strong>[Calculate and present dilution analysis for new investors]</strong></p>
+      
+      <hr/>
+      
+      <h3>SELECTED CONSOLIDATED FINANCIAL DATA</h3>
+      
+      <p><strong>[Present 5-year selected financial data in tabular format]</strong></p>
+      
+      <hr/>
+      
+      <h3>MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS</h3>
+      
+      <p><strong>[Comprehensive MD&A section covering:]</strong></p>
+      <ul>
+        <li>Overview</li>
+        <li>Key Factors Affecting Our Performance</li>
+        <li>Components of Our Results of Operations</li>
+        <li>Results of Operations (by period)</li>
+        <li>Liquidity and Capital Resources</li>
+        <li>Contractual Obligations</li>
+        <li>Off-Balance Sheet Arrangements</li>
+      </ul>
     `,
     immediatelyRender: false,
     editorProps: {
@@ -119,7 +418,7 @@ export default function DraftArtifactPanel({
         exit={{ width: 0, opacity: 0 }}
         transition={{
           width: PANEL_ANIMATION,
-          opacity: { duration: 0.15, ease: "easeOut" }
+          opacity: { duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }
         }}
         className="flex-1 flex flex-col bg-neutral-50 overflow-hidden"
       >

@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ export default function FileManagementDialog({ isOpen, onClose }: FileManagement
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[900px] max-w-[900px] h-[700px] p-0 gap-0 overflow-hidden flex flex-col">
+        <DialogTitle className="sr-only">File Management</DialogTitle>
         {/* Header */}
         <div className="flex justify-between px-4 py-3 border-b border-neutral-200">
           <span className="text-sm font-medium text-neutral-900">Files and sources</span>

@@ -3,11 +3,13 @@
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Search, FolderOpen, FileText, ChevronRight, Clock, Star } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { X, Search, Plus, History, Star } from "lucide-react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,50 +36,74 @@ interface iManageFilePickerDialogProps {
   onFilesSelected?: (files: iManageFile[]) => void;
 }
 
+// Helper function to get file icon based on extension
+const getFileIcon = (fileName: string) => {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  
+  switch (extension) {
+    case 'pdf':
+      return '/pdf-icon.svg';
+    case 'docx':
+    case 'doc':
+      return '/docx-icon.svg';
+    case 'xlsx':
+    case 'xls':
+      return '/xlsx-icon.svg';
+    case 'txt':
+    default:
+      return '/file.svg';
+  }
+};
+
 // Define columns once, outside of component
 const columns: ColumnDef<iManageFile>[] = [
   {
     id: 'select',
     header: ({ table }) => (
-      <input
-        type="checkbox"
-        checked={table.getIsAllPageRowsSelected()}
-        onChange={(e) => table.toggleAllPageRowsSelected(!!e.target.checked)}
-        className="h-4 w-4 text-blue-600 rounded border-neutral-300 focus:ring-blue-500"
-      />
+      <div className="flex items-center">
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(checked) => table.toggleAllPageRowsSelected(!!checked)}
+        />
+      </div>
     ),
     cell: ({ row }) => (
-      <input
-        type="checkbox"
-        checked={row.getIsSelected()}
-        onChange={(e) => row.toggleSelected(!!e.target.checked)}
-        disabled={!row.getCanSelect()}
-        className="h-4 w-4 text-blue-600 rounded border-neutral-300 focus:ring-blue-500"
-      />
+      <div className="flex items-center">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(checked) => row.toggleSelected(!!checked)}
+          disabled={!row.getCanSelect()}
+        />
+      </div>
     ),
-    size: 40,
+    size: 24,
   },
   {
     accessorKey: 'name',
     header: 'Name',
     cell: ({ row }) => (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {row.original.type === 'folder' ? (
-          <FolderOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          <Image 
+            src="/folderIcon.svg" 
+            alt="Folder" 
+            width={16} 
+            height={16} 
+            className="flex-shrink-0" 
+          />
         ) : (
-          <FileText className="h-5 w-5 text-neutral-400 flex-shrink-0" />
+          <Image 
+            src={getFileIcon(row.original.name)} 
+            alt="File" 
+            width={16} 
+            height={16} 
+            className="flex-shrink-0" 
+          />
         )}
         <div className="min-w-0">
-          <p className="text-sm font-medium text-neutral-900 truncate">{row.original.name}</p>
+          <p className="text-sm text-neutral-900 truncate">{row.original.name}</p>
         </div>
       </div>
-    ),
-  },
-  {
-    accessorKey: 'modifiedDate',
-    header: 'Modified',
-    cell: ({ getValue }) => (
-      <span className="text-sm text-neutral-600">{getValue() as string}</span>
     ),
   },
   {
@@ -87,24 +113,25 @@ const columns: ColumnDef<iManageFile>[] = [
       <span className="text-sm text-neutral-600">{(getValue() as string) || '-'}</span>
     ),
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => (
-      row.original.type === 'folder' ? (
-        <ChevronRight className="h-4 w-4 text-neutral-400" />
-      ) : null
-    ),
-    size: 40,
-  },
 ];
 
 // Mock data - define once
 const mockFiles: iManageFile[] = [
   { id: '1', name: 'Acme Corporation', type: 'folder', modifiedDate: '2024-01-15', path: 'My Matters/Acme Corporation' },
   { id: '2', name: 'GlobalTech Inc', type: 'folder', modifiedDate: '2024-01-10', path: 'My Matters/GlobalTech Inc' },
-  { id: '3', name: 'Contract_Draft_v3.docx', type: 'file', modifiedDate: '2024-01-14', size: '2.3 MB', path: 'My Matters/Acme Corporation/Contracts' },
-  { id: '4', name: 'Due_Diligence_Report.pdf', type: 'file', modifiedDate: '2024-01-12', size: '5.1 MB', path: 'My Matters/GlobalTech Inc/Due Diligence' },
-  { id: '5', name: 'Meeting_Notes_Jan.docx', type: 'file', modifiedDate: '2024-01-08', size: '345 KB', path: 'My Matters/Acme Corporation/Notes' },
+  { id: '3', name: 'Litigation', type: 'folder', modifiedDate: '2024-01-12', path: 'My Matters/Litigation' },
+  { id: '4', name: 'Echabarrai v. PPG Indus - Scheduling Order.pdf', type: 'file', modifiedDate: '2024-01-14', size: '1.2 MB', path: 'My Matters/Litigation/Echabarrai' },
+  { id: '5', name: 'Schnupp v. Blair Pharmacy - Opinion.pdf', type: 'file', modifiedDate: '2024-01-13', size: '3.4 MB', path: 'My Matters/Litigation/Schnupp' },
+  { id: '6', name: 'Unicorn Capital _ Nkomati claims management.docx', type: 'file', modifiedDate: '2024-01-12', size: '856 KB', path: 'My Matters/Unicorn Capital' },
+  { id: '7', name: 'C05763098.pdf', type: 'file', modifiedDate: '2024-01-11', size: '2.1 MB', path: 'My Matters/GlobalTech Inc/Documents' },
+  { id: '8', name: 'Contract_Draft_v3.docx', type: 'file', modifiedDate: '2024-01-14', size: '2.3 MB', path: 'My Matters/Acme Corporation/Contracts' },
+  { id: '9', name: 'Due_Diligence_Report.pdf', type: 'file', modifiedDate: '2024-01-12', size: '5.1 MB', path: 'My Matters/GlobalTech Inc/Due Diligence' },
+  { id: '10', name: 'Meeting_Notes_Jan.docx', type: 'file', modifiedDate: '2024-01-08', size: '345 KB', path: 'My Matters/Acme Corporation/Notes' },
+  { id: '11', name: 'Settlement_Agreement_Final.pdf', type: 'file', modifiedDate: '2024-01-07', size: '1.8 MB', path: 'My Matters/Litigation/Settlements' },
+  { id: '12', name: 'Patent_Application_2024.pdf', type: 'file', modifiedDate: '2024-01-06', size: '4.2 MB', path: 'My Matters/GlobalTech Inc/Patents' },
+  { id: '13', name: 'Board_Resolution_Q1.docx', type: 'file', modifiedDate: '2024-01-05', size: '567 KB', path: 'My Matters/Acme Corporation/Corporate' },
+  { id: '14', name: 'Compliance_Review_2024.xlsx', type: 'file', modifiedDate: '2024-01-04', size: '890 KB', path: 'My Matters/Compliance' },
+  { id: '15', name: 'Merger_Agreement_Draft.pdf', type: 'file', modifiedDate: '2024-01-03', size: '3.2 MB', path: 'My Matters/M&A/Unicorn Capital' }
 ];
 
 export default function IManageFilePickerDialog({ 
@@ -114,7 +141,6 @@ export default function IManageFilePickerDialog({
 }: iManageFilePickerDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [rowSelection, setRowSelection] = useState({});
-  const [activeTab, setActiveTab] = useState<'browse' | 'recent' | 'favorites'>('browse');
   const [isLoading, setIsLoading] = useState(true);
   const [showProgressBar, setShowProgressBar] = useState(false);
   const [showIManage, setShowIManage] = useState(false);
@@ -160,7 +186,7 @@ export default function IManageFilePickerDialog({
       rowSelection,
       globalFilter: searchQuery,
     },
-    enableRowSelection: (row) => row.original.type !== 'folder',
+    enableRowSelection: true, // Enable selection for all rows including folders
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setSearchQuery,
     getCoreRowModel: getCoreRowModel(),
@@ -177,6 +203,7 @@ export default function IManageFilePickerDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[800px] max-w-[800px] h-[600px] p-0 gap-0 overflow-hidden flex flex-col">
+        <DialogTitle className="sr-only">Select Files from iManage</DialogTitle>
         {/* Loading Splash Screen */}
         <AnimatePresence>
           {isLoading && (
@@ -300,62 +327,43 @@ export default function IManageFilePickerDialog({
               style={{ height: '36px', fontSize: '14px' }}
             />
           </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-neutral-200">
-          <button
-            onClick={() => setActiveTab('browse')}
-            className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
-              activeTab === 'browse' 
-                ? "text-neutral-900 border-neutral-900" 
-                : "text-neutral-500 border-transparent hover:text-neutral-700"
-            )}
-          >
-            Browse
-          </button>
-          <button
-            onClick={() => setActiveTab('recent')}
-            className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
-              activeTab === 'recent' 
-                ? "text-neutral-900 border-neutral-900" 
-                : "text-neutral-500 border-transparent hover:text-neutral-700"
-            )}
-          >
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
-              Recent
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('favorites')}
-            className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
-              activeTab === 'favorites' 
-                ? "text-neutral-900 border-neutral-900" 
-                : "text-neutral-500 border-transparent hover:text-neutral-700"
-            )}
-          >
-            <div className="flex items-center gap-1.5">
-              <Star className="h-3.5 w-3.5" />
-              Favorites
-            </div>
-          </button>
+          
+          {/* Filter Chips */}
+          <div className="flex gap-2 mt-3">
+            <button className="flex items-center gap-1.5 px-2 py-1 border border-dashed border-neutral-300 hover:bg-neutral-50 rounded-md transition-colors">
+              <Plus className="h-3.5 w-3.5 text-neutral-500" />
+              <span className="text-xs text-neutral-700">Document type</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-2 py-1 border border-dashed border-neutral-300 hover:bg-neutral-50 rounded-md transition-colors">
+              <Plus className="h-3.5 w-3.5 text-neutral-500" />
+              <span className="text-xs text-neutral-700">File type</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-2 py-1 border border-dashed border-neutral-300 hover:bg-neutral-50 rounded-md transition-colors">
+              <History className="h-3.5 w-3.5 text-neutral-500" />
+              <span className="text-xs text-neutral-700">Recent</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-2 py-1 border border-dashed border-neutral-300 hover:bg-neutral-50 rounded-md transition-colors">
+              <Star className="h-3.5 w-3.5 text-neutral-500" />
+              <span className="text-xs text-neutral-700">Favorites</span>
+            </button>
+          </div>
         </div>
 
         {/* File Table */}
         <div className="flex-1 overflow-auto">
           {!isLoading && (
             <table className="w-full">
-              <thead className="sticky top-0 bg-neutral-50 border-b border-neutral-200">
+              <thead className="sticky top-0 z-10 h-8" style={{background: 'linear-gradient(to bottom, white calc(100% - 1px), rgb(212, 212, 212) 100%)'}}>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        className="px-4 py-3 text-left text-xs font-medium text-neutral-600 uppercase tracking-wider"
+                        className={cn(
+                          "py-2 text-left text-xs font-medium text-neutral-600 tracking-wider",
+                          header.id === 'select' ? "pl-4 pr-0.5" : 
+                          header.id === 'name' ? "pl-1 pr-4" : "px-4"
+                        )}
                         style={{ width: header.getSize() }}
                       >
                         {header.isPlaceholder
@@ -381,20 +389,21 @@ export default function IManageFilePickerDialog({
                     <tr
                       key={row.id}
                       className={cn(
-                        "hover:bg-neutral-50 transition-colors",
-                        row.getIsSelected() && "bg-blue-50 hover:bg-blue-100",
-                        row.original.type !== 'folder' && "cursor-pointer"
+                        "hover:bg-neutral-50 transition-colors cursor-pointer",
+                        row.getIsSelected() && "bg-neutral-100 hover:bg-neutral-100"
                       )}
                       onClick={() => {
-                        if (row.original.type !== 'folder') {
-                          row.toggleSelected();
-                        }
+                        row.toggleSelected();
                       }}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
-                          className="px-4 py-3 text-sm text-neutral-900"
+                          className={cn(
+                            "py-3 text-sm text-neutral-900",
+                            cell.column.id === 'select' ? "pl-4 pr-0.5" : 
+                            cell.column.id === 'name' ? "pl-1 pr-4" : "px-4"
+                          )}
                           style={{ width: cell.column.getSize() }}
                           onClick={(e) => {
                             // Prevent row click when clicking checkbox
