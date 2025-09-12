@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -36,18 +36,33 @@ interface PrecedentCompaniesTableProps {
   onSelectionChange?: (selectedCompanies: CompanyData[]) => void;
   onConfirm?: (selectedCompanies: CompanyData[]) => void;
   isConfirmed?: boolean;
+  goldenPrecedentId?: string | null;
+  onGoldenPrecedentChange?: (id: string | null) => void;
 }
 
 export default function PrecedentCompaniesTable({ 
   data: initialData, 
   onSelectionChange,
   onConfirm,
-  isConfirmed: isConfirmedProp = false
+  isConfirmed: isConfirmedProp = false,
+  goldenPrecedentId: goldenPrecedentIdProp,
+  onGoldenPrecedentChange
 }: PrecedentCompaniesTableProps) {
   const [data, setData] = useState<CompanyData[]>(initialData);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(isConfirmedProp);
-  const [goldenPrecedentId, setGoldenPrecedentId] = useState<string | null>(null);
+  
+  // Use internal state if no prop is provided (for backward compatibility)
+  const [internalGoldenPrecedentId, setInternalGoldenPrecedentId] = useState<string | null>(null);
+  const goldenPrecedentId = goldenPrecedentIdProp !== undefined ? goldenPrecedentIdProp : internalGoldenPrecedentId;
+  
+  const handleGoldenPrecedentChange = useCallback((id: string | null) => {
+    if (onGoldenPrecedentChange) {
+      onGoldenPrecedentChange(id);
+    } else {
+      setInternalGoldenPrecedentId(id);
+    }
+  }, [onGoldenPrecedentChange]);
 
   // Update isConfirmed when prop changes
   useEffect(() => {
@@ -163,7 +178,7 @@ export default function PrecedentCompaniesTable({
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => {
-                      setGoldenPrecedentId(
+                      handleGoldenPrecedentChange(
                         goldenPrecedentId === row.original.id ? null : row.original.id
                       );
                     }}
@@ -261,7 +276,7 @@ export default function PrecedentCompaniesTable({
         <div className="text-neutral-900 text-sm">{row.original.class}</div>
       ),
     },
-  ], [data, onSelectionChange, hoveredRow, isConfirmed, goldenPrecedentId]);
+  ], [data, onSelectionChange, hoveredRow, isConfirmed, goldenPrecedentId, handleGoldenPrecedentChange]);
 
   // Filter data if confirmed
   const displayData = useMemo(() => 

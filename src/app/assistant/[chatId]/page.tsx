@@ -130,6 +130,7 @@ type Message = {
   reviewTableMessage?: string;
   selectedCounselFilter?: 'latham' | 'nofilter';
   isPrecedentTableConfirmed?: boolean;
+  goldenPrecedentId?: string | null;
 };
 
 // Shared animation configuration for consistency - refined timing
@@ -1942,7 +1943,7 @@ export default function AssistantChatPage({
                               {!message.edgarReviewLoadingState?.isLoading && message.edgarReviewCompleteMessage && (
                                 <>
                                   <motion.div 
-                                    className="mt-3 text-neutral-900 leading-relaxed pl-2"
+                                    className="mt-2 text-neutral-900 leading-relaxed pl-2"
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
@@ -1961,6 +1962,15 @@ export default function AssistantChatPage({
                                       <PrecedentCompaniesTable 
                                         data={message.precedentCompaniesData}
                                         isConfirmed={message.isPrecedentTableConfirmed || false}
+                                        goldenPrecedentId={message.goldenPrecedentId}
+                                        onGoldenPrecedentChange={(id) => {
+                                          setMessages(prev => prev.map((msg, idx) => {
+                                            if (idx === index) {
+                                              return { ...msg, goldenPrecedentId: id };
+                                            }
+                                            return msg;
+                                          }));
+                                        }}
                                         onConfirm={(selectedCompanies) => {
                                           console.log('Selected companies:', selectedCompanies);
                                           
@@ -2066,7 +2076,7 @@ export default function AssistantChatPage({
                                     <AnimatePresence>
                                       <motion.div 
                                         key="review-table-generation"
-                                        className="mt-3.5"
+                                        className="mt-4.5"
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -2088,7 +2098,7 @@ export default function AssistantChatPage({
                                         {/* Review Table Message - show after generation completes */}
                                         {!message.reviewTableGenerationLoadingState?.isLoading && message.reviewTableMessage && (
                                           <motion.div
-                                            className="mt-3 pl-2 text-neutral-700"
+                                            className="mt-2 pl-2 text-neutral-700"
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
@@ -2108,7 +2118,10 @@ export default function AssistantChatPage({
                                             <ArtifactCard
                                               title={message.reviewTableArtifactData.title}
                                               subtitle={message.reviewTableArtifactData.subtitle}
-                                              variant="large"
+                                              variant={unifiedArtifactPanelOpen ? 'small' : 'large'}
+                                              isSelected={unifiedArtifactPanelOpen && (
+                                                currentArtifactType === 'review-table' && selectedReviewTableArtifact?.title === message.reviewTableArtifactData.title
+                                              )}
                                               onClick={() => {
                                                 const artifactData = {
                                                   title: message.reviewTableArtifactData!.title,
