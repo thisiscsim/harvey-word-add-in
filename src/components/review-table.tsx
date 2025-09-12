@@ -31,7 +31,7 @@ type Document = {
   company4?: string;
   company5?: string;
   snowflake?: string;
-  cloudflare?: string;
+  zscaler?: string;
   [key: string]: string | number | boolean | undefined; // Dynamic properties for company data
 };
 
@@ -46,7 +46,7 @@ const data: Document[] = [
     company4: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
     company5: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 2,
@@ -56,7 +56,7 @@ const data: Document[] = [
     forceMajeureClause: 'Somewhat Disputed',
     assignmentProvisionSummary: 'No assignment without prior written consent.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 3,
@@ -67,7 +67,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'No assignment without consent, null if viola...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 4,
@@ -77,7 +77,7 @@ const data: Document[] = [
     forceMajeureClause: 'Not Disputed',
     assignmentProvisionSummary: 'No assignment without prior written consent.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 5,
@@ -88,7 +88,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'WKKC cannot assign the contract without Kel...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 6,
@@ -99,7 +99,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'No assignment without consent, except to wh...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 7,
@@ -109,7 +109,7 @@ const data: Document[] = [
     forceMajeureClause: 'Disputed',
     assignmentProvisionSummary: 'Assignment allowed with conditions.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 8,
@@ -119,7 +119,7 @@ const data: Document[] = [
     forceMajeureClause: 'Disputed',
     assignmentProvisionSummary: 'Assignment requires prior written consent.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 9,
@@ -129,7 +129,7 @@ const data: Document[] = [
     forceMajeureClause: 'Somewhat Disputed',
     assignmentProvisionSummary: 'No assignment without prior written consent.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 10,
@@ -140,7 +140,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Assignment requires consent, with exception...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 11,
@@ -151,7 +151,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Assignment requires consent, with exception...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 12,
@@ -162,7 +162,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       "Company needs Aron's consent to assign; Aro...",
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 13,
@@ -173,7 +173,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Assignment prohibited without written consent...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 14,
@@ -184,7 +184,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Assignment allowed with 30-day notice...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 15,
@@ -195,7 +195,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'No assignment to competitors allowed...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 16,
@@ -206,7 +206,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Assignment requires insurance coverage proof...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 17,
@@ -217,7 +217,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Assignment subject to environmental review...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 18,
@@ -228,7 +228,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Assignment requires vendor approval...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 19,
@@ -239,7 +239,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Assignment void if integration incomplete...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 20,
@@ -250,7 +250,7 @@ const data: Document[] = [
     assignmentProvisionSummary:
       'Force majeure provisions apply to pandemics...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
+    zscaler: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
 ];
 

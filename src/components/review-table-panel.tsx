@@ -165,11 +165,11 @@ export default function ReviewTablePanel({
           <div className="overflow-x-auto">
           <ReviewTable 
             selectedCompanies={[
-              { id: 'crowdstrike', name: 'Crowdstrike', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
-              { id: 'okta', name: 'Okta', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
-              { id: 'sentinelone', name: 'Sentinel One', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
-              { id: 'snowflake', name: 'Snowflake', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
-              { id: 'cloudflare', name: 'Cloudflare', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' }
+              { id: 'crowdstrike', name: 'Crowdstrike', logo: '/company-precedent-logo/crowdstrike.jpg', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
+              { id: 'okta', name: 'Okta', logo: '/company-precedent-logo/okta.jpg', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
+              { id: 'sentinelone', name: 'Sentinel One', logo: '/company-precedent-logo/sentinelone.png', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
+              { id: 'snowflake', name: 'Snowflake', logo: '/company-precedent-logo/snowflake.png', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
+              { id: 'zscaler', name: 'Zscaler', logo: '/company-precedent-logo/zscaler.jpg', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' }
             ]}
             alignment={alignment}
           />
