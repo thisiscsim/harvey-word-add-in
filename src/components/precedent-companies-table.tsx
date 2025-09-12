@@ -47,6 +47,7 @@ export default function PrecedentCompaniesTable({
   const [data, setData] = useState<CompanyData[]>(initialData);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(isConfirmedProp);
+  const [goldenPrecedentId, setGoldenPrecedentId] = useState<string | null>(null);
 
   // Update isConfirmed when prop changes
   useEffect(() => {
@@ -93,69 +94,105 @@ export default function PrecedentCompaniesTable({
       header: () => <div className="text-neutral-600 font-medium text-xs truncate">Company</div>,
       size: 200,
       cell: ({ row }) => (
-        <div className="flex flex-col gap-0">
-          <Tooltip delayDuration={300}>
-            <TooltipTrigger asChild>
-              <a 
-                href={row.original.s1Url || "https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-neutral-900 font-normal text-sm truncate transition-colors hover:text-neutral-700"
-                style={{ textDecoration: 'none' }}
+        <div className="flex flex-col gap-0 relative">
+          <div className="flex items-center gap-2">
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <a 
+                  href={row.original.s1Url || "https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-neutral-900 font-normal text-sm truncate transition-colors hover:text-neutral-700"
+                  style={{ textDecoration: 'none' }}
+                >
+                  {row.original.company}
+                </a>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="top" 
+                className="bg-white border border-neutral-200 p-4 rounded-lg shadow-lg max-w-sm"
+                sideOffset={5}
               >
-                {row.original.company}
-              </a>
-            </TooltipTrigger>
-            <TooltipContent 
-              side="top" 
-              className="bg-white border border-neutral-200 p-4 rounded-lg shadow-lg max-w-sm"
-              sideOffset={5}
-            >
-              <div className="flex flex-col gap-3">
-                {/* Header with avatar and company info */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                    <Image 
-                      src={row.original.logo || "/latham-logo.jpg"} 
-                      alt={row.original.company} 
-                      width={40} 
-                      height={40}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="flex flex-col gap-3">
+                  {/* Header with avatar and company info */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      <Image 
+                        src={row.original.logo || "/latham-logo.jpg"} 
+                        alt={row.original.company} 
+                        width={40} 
+                        height={40}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <h3 className="text-sm font-medium text-neutral-900">{row.original.company}</h3>
+                      <p className="text-xs text-neutral-500">{row.original.ticker}</p>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <h3 className="text-sm font-medium text-neutral-900">{row.original.company}</h3>
-                    <p className="text-xs text-neutral-500">{row.original.ticker}</p>
+                  
+                  {/* S-1 Excerpt */}
+                  <div className="text-xs text-neutral-700 leading-relaxed">
+                    <p className="line-clamp-6">
+                      We are a leader in cloud-delivered protection that stops breaches, 
+                      protects data, and powers business velocity with a cloud-native platform 
+                      that delivers comprehensive protection against sophisticated attacks. 
+                      Our Falcon platform leverages artificial intelligence and behavioral analysis 
+                      to provide real-time threat detection and response capabilities across 
+                      endpoints, cloud workloads, identity, and data. We have experienced rapid 
+                      growth, with our Annual Recurring Revenue (ARR) growing from $249.8 million 
+                      as of January 31, 2019 to $874.4 million as of January 31, 2021, representing 
+                      a compound annual growth rate of 87%. Our subscription-based model provides 
+                      predictable revenue streams and strong unit economics.
+                    </p>
+                    <button 
+                      className="mt-1 text-xs text-neutral-900 hover:text-neutral-600 transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open(row.original.s1Url || "https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm", '_blank');
+                      }}
+                    >
+                      View source
+                    </button>
                   </div>
                 </div>
-                
-                {/* S-1 Excerpt */}
-                <div className="text-xs text-neutral-700 leading-relaxed">
-                  <p className="line-clamp-6">
-                    We are a leader in cloud-delivered protection that stops breaches, 
-                    protects data, and powers business velocity with a cloud-native platform 
-                    that delivers comprehensive protection against sophisticated attacks. 
-                    Our Falcon platform leverages artificial intelligence and behavioral analysis 
-                    to provide real-time threat detection and response capabilities across 
-                    endpoints, cloud workloads, identity, and data. We have experienced rapid 
-                    growth, with our Annual Recurring Revenue (ARR) growing from $249.8 million 
-                    as of January 31, 2019 to $874.4 million as of January 31, 2021, representing 
-                    a compound annual growth rate of 87%. Our subscription-based model provides 
-                    predictable revenue streams and strong unit economics.
-                  </p>
-                  <button 
-                    className="mt-1 text-xs text-neutral-900 hover:text-neutral-600 transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.open(row.original.s1Url || "https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm", '_blank');
+              </TooltipContent>
+            </Tooltip>
+            {!isConfirmed && (hoveredRow === row.id || goldenPrecedentId === row.original.id) && (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => {
+                      setGoldenPrecedentId(
+                        goldenPrecedentId === row.original.id ? null : row.original.id
+                      );
                     }}
+                    className="p-0.5 rounded hover:bg-neutral-100 transition-colors"
                   >
-                    View source
+                    <Image 
+                      src={goldenPrecedentId === row.original.id ? "/star-filled.svg" : "/star-outline.svg"} 
+                      alt="Star" 
+                      width={16} 
+                      height={16}
+                      className={goldenPrecedentId === row.original.id ? "" : "opacity-50 hover:opacity-100"}
+                    />
                   </button>
-                </div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {goldenPrecedentId === row.original.id ? "Remove golden precedent" : "Set golden precedent"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {isConfirmed && goldenPrecedentId === row.original.id && (
+              <Image 
+                src="/star-filled.svg" 
+                alt="Golden precedent" 
+                width={16} 
+                height={16}
+                className="flex-shrink-0"
+              />
+            )}
+          </div>
           <div className="text-neutral-500 text-xs">{row.original.ticker}</div>
         </div>
       ),
@@ -224,7 +261,7 @@ export default function PrecedentCompaniesTable({
         <div className="text-neutral-900 text-sm">{row.original.class}</div>
       ),
     },
-  ], [data, onSelectionChange]);
+  ], [data, onSelectionChange, hoveredRow, isConfirmed, goldenPrecedentId]);
 
   // Filter data if confirmed
   const displayData = useMemo(() => 
@@ -250,7 +287,7 @@ export default function PrecedentCompaniesTable({
   return (
     <div className="w-full">
       <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
-        <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+        <div className="overflow-x-auto max-h-[400px] overflow-y-auto relative">
           <table className="w-full table-fixed">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-neutral-200 h-8 bg-neutral-50">
@@ -281,7 +318,7 @@ export default function PrecedentCompaniesTable({
                 <tr
                   key={row.id}
                   className={cn(
-                    "border-b border-neutral-100 transition-all duration-150",
+                    "border-b border-neutral-100 transition-all duration-150 group relative",
                     hoveredRow === row.id && "bg-neutral-50/50",
                     index === table.getRowModel().rows.length - 1 && "border-b-0"
                   )}
