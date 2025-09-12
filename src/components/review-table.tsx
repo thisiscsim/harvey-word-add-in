@@ -294,12 +294,25 @@ interface SelectedCompany {
 
 interface ReviewTableProps {
   selectedCompanies?: SelectedCompany[];
+  alignment?: 'top' | 'center' | 'bottom';
 }
 
-export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps) {
+export default function ReviewTable({ selectedCompanies = [], alignment = 'top' }: ReviewTableProps) {
   // State for selected rows
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  
+  // Get vertical alignment style based on alignment prop
+  const getVerticalAlign = () => {
+    switch (alignment) {
+      case 'center':
+        return 'middle';
+      case 'bottom':
+        return 'bottom';
+      default:
+        return 'top';
+    }
+  };
   
   // Handle row selection
   const toggleRowSelection = React.useCallback((rowId: number) => {
@@ -511,7 +524,7 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
                       lineHeight: '16px', 
                       minHeight: '32px', 
                       maxHeight: '140px', 
-                      verticalAlign: 'top',
+                      verticalAlign: getVerticalAlign(),
                       width: cell.column.id === 'select' ? 48 : cell.column.id === 'fileName' ? 220 : 280
                     }}
                     onMouseEnter={isSelectColumn ? () => setHoveredRow(row.original.id) : undefined}

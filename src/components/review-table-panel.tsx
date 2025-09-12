@@ -8,6 +8,7 @@ import ReviewTableToolbar from "@/components/review-table-toolbar";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
 import ExportReviewDialog from "@/components/export-review-dialog";
 import ReviewTable from "@/components/review-table";
+import { useState } from "react";
 
 interface ReviewTablePanelProps {
   selectedArtifact: { title: string; subtitle: string } | null;
@@ -51,6 +52,8 @@ export default function ReviewTablePanel({
   sourcesDrawerOpen,
   onSourcesDrawerOpenChange
 }: ReviewTablePanelProps) {
+  const [alignment, setAlignment] = useState<'top' | 'center' | 'bottom'>('top');
+  
   // Placeholder for tanstack table state and logic
   return (
     <>
@@ -152,6 +155,8 @@ export default function ReviewTablePanel({
             onToggleChat(!chatOpen);
           }}
           onCloseArtifact={onClose}
+          alignment={alignment}
+          onAlignmentChange={setAlignment}
         />
         
         {/* Content Area - Review Table */}
@@ -166,6 +171,7 @@ export default function ReviewTablePanel({
               { id: 'snowflake', name: 'Snowflake', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },
               { id: 'cloudflare', name: 'Cloudflare', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' }
             ]}
+            alignment={alignment}
           />
           </div>
         </div>

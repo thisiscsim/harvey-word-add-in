@@ -21,10 +21,17 @@ interface ReviewTableToolbarProps {
   chatOpen: boolean;
   onToggleChat: () => void;
   onCloseArtifact?: () => void;
+  alignment?: 'top' | 'center' | 'bottom';
+  onAlignmentChange?: (alignment: 'top' | 'center' | 'bottom') => void;
 }
 
-export default function ReviewTableToolbar({ chatOpen, onToggleChat, onCloseArtifact }: ReviewTableToolbarProps) {
-  const [activeView, setActiveView] = useState<'compact' | 'standard' | 'comfortable'>('standard');
+export default function ReviewTableToolbar({ chatOpen, onToggleChat, onCloseArtifact, alignment = 'top', onAlignmentChange }: ReviewTableToolbarProps) {
+  const [activeView, setActiveView] = useState<'top' | 'center' | 'bottom'>(alignment);
+  
+  const handleAlignmentChange = (newAlignment: 'top' | 'center' | 'bottom') => {
+    setActiveView(newAlignment);
+    onAlignmentChange?.(newAlignment);
+  };
   return (
     <TooltipProvider>
       <div className="px-3 py-2 border-b border-neutral-200 bg-white flex items-center justify-between overflow-x-auto" style={{ minHeight: '52px' }}>
@@ -89,75 +96,75 @@ export default function ReviewTableToolbar({ chatOpen, onToggleChat, onCloseArti
 
           {/* Table view options */}
           <div className="flex items-center gap-1">
-            {/* Compact view */}
+            {/* Top align */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button 
-                  onClick={() => setActiveView('compact')}
+                  onClick={() => handleAlignmentChange('top')}
                   className={`p-2 rounded-md transition-colors ${
-                    activeView === 'compact' 
+                    activeView === 'top' 
                       ? 'bg-neutral-200 text-neutral-900 hover:bg-neutral-300' 
                       : 'text-neutral-600 hover:bg-neutral-100'
                   }`}
                 >
                   <Image 
-                    src={activeView === 'compact' ? "/top-align-filled.svg" : "/top-align-outline.svg"} 
-                    alt="Compact view" 
+                    src={activeView === 'top' ? "/top-align-filled.svg" : "/top-align-outline.svg"} 
+                    alt="Top align" 
                     width={16} 
                     height={16}
                   />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Compact view</p>
+                <p>Top align</p>
               </TooltipContent>
             </Tooltip>
 
-            {/* Standard view */}
+            {/* Center align */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button 
-                  onClick={() => setActiveView('standard')}
+                  onClick={() => handleAlignmentChange('center')}
                   className={`p-2 rounded-md transition-colors ${
-                    activeView === 'standard' 
+                    activeView === 'center' 
                       ? 'bg-neutral-200 text-neutral-900 hover:bg-neutral-300' 
                       : 'text-neutral-600 hover:bg-neutral-100'
                   }`}
                 >
                   <Image 
-                    src={activeView === 'standard' ? "/center-align-filled.svg" : "/center-align-outline.svg"} 
-                    alt="Standard view" 
+                    src={activeView === 'center' ? "/center-align-filled.svg" : "/center-align-outline.svg"} 
+                    alt="Center align" 
                     width={16} 
                     height={16}
                   />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Standard view</p>
+                <p>Center align</p>
               </TooltipContent>
             </Tooltip>
 
-            {/* Comfortable view */}
+            {/* Bottom align */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button 
-                  onClick={() => setActiveView('comfortable')}
+                  onClick={() => handleAlignmentChange('bottom')}
                   className={`p-2 rounded-md transition-colors ${
-                    activeView === 'comfortable' 
+                    activeView === 'bottom' 
                       ? 'bg-neutral-200 text-neutral-900 hover:bg-neutral-300' 
                       : 'text-neutral-600 hover:bg-neutral-100'
                   }`}
                 >
                   <Image 
-                    src={activeView === 'comfortable' ? "/bottom-align-filled.svg" : "/bottom-align-outline.svg"} 
-                    alt="Comfortable view" 
+                    src={activeView === 'bottom' ? "/bottom-align-filled.svg" : "/bottom-align-outline.svg"} 
+                    alt="Bottom align" 
                     width={16} 
                     height={16}
                   />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Comfortable view</p>
+                <p>Bottom align</p>
               </TooltipContent>
             </Tooltip>
           </div>
