@@ -6,6 +6,7 @@ import {
   getCoreRowModel,
   useReactTable,
   ColumnDef,
+  ColumnResizeMode,
 } from '@tanstack/react-table';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -295,9 +296,10 @@ interface SelectedCompany {
 interface ReviewTableProps {
   selectedCompanies?: SelectedCompany[];
   alignment?: 'top' | 'center' | 'bottom';
+  textWrap?: boolean;
 }
 
-export default function ReviewTable({ selectedCompanies = [], alignment = 'top' }: ReviewTableProps) {
+export default function ReviewTable({ selectedCompanies = [], alignment = 'top', textWrap = true }: ReviewTableProps) {
   // State for selected rows
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
@@ -361,6 +363,8 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top' 
     const baseColumns: ColumnDef<Document>[] = [
       {
         id: 'select',
+        size: 48,
+        enableResizing: false,
         header: () => (
           <div className='flex justify-center'>
             <Checkbox 
@@ -399,10 +403,14 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top' 
             <span>Risk Theme</span>
           </div>
         ),
-        size: 280,
-        maxSize: 280,
+        size: 220,
+        minSize: 150,
+        maxSize: 400,
         cell: ({ getValue }) => (
-          <span className='block truncate'>{getValue() as string}</span>
+          <span className={`block ${textWrap ? '' : 'truncate'}`} style={{ 
+            whiteSpace: textWrap ? 'normal' : 'nowrap',
+            wordBreak: textWrap ? 'break-word' : 'normal'
+          }}>{getValue() as string}</span>
         ),
       },
     ];
@@ -431,7 +439,8 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top' 
           </div>
         ),
         size: 280,
-        maxSize: 280,
+        minSize: 200,
+        maxSize: 500,
         cell: ({ getValue, row }) => {
           const cellKey = `${row.original.id}-${company.id}`;
           const cellText = cellTexts[cellKey];
@@ -447,12 +456,13 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top' 
           
           return (
             <div
-              className="overflow-y-auto"
+              className={textWrap ? "overflow-y-auto" : "overflow-hidden text-ellipsis"}
               style={{ 
-                maxHeight: '120px',
-                wordBreak: 'break-word',
-                whiteSpace: 'normal',
-                lineHeight: '1.4'
+                maxHeight: textWrap ? '120px' : 'none',
+                wordBreak: textWrap ? 'break-word' : 'normal',
+                whiteSpace: textWrap ? 'normal' : 'nowrap',
+                lineHeight: '1.4',
+                maxWidth: '100%'
               }}
             >
               {String(value)}
@@ -463,21 +473,36 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top' 
     });
 
     return baseColumns;
-  }, [selectedCompanies, cellTexts, isAllSelected, selectedRows, hoveredRow, toggleSelectAll, toggleRowSelection]);
+  }, [selectedCompanies, cellTexts, isAllSelected, selectedRows, hoveredRow, toggleSelectAll, toggleRowSelection, textWrap]);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    columnResizeMode: 'onChange' as ColumnResizeMode,
+    enableColumnResizing: true,
+    defaultColumn: {
+      minSize: 50,
+    },
   });
 
   return (
     <div className='relative h-full min-w-0'>
-      <div className='inline-block min-w-max'>
-        <table className='border-separate border-spacing-0 border-b border-[#ECEBE9]' style={{ tableLayout: 'fixed' }}>
+      <div className='inline-block relative overflow-hidden'>
+        <table 
+          className={`border-separate border-spacing-0 border-b border-[#ECEBE9] ${
+            table.getState().columnSizingInfo.isResizingColumn ? 'select-none' : ''
+          }`} 
+          style={{ width: table.getCenterTotalSize() }}
+        >
           <colgroup>
-            {columns.map((col) => (
-              <col key={col.id} style={{ width: col.id === 'select' ? 48 : col.id === 'fileName' ? 220 : 280 }} />
+            {table.getAllColumns().map((column) => (
+              <col 
+                key={column.id} 
+                style={{ 
+                  width: column.getSize()
+                }} 
+              />
             ))}
           </colgroup>
           <thead>
@@ -486,14 +511,15 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top' 
               {headerGroup.headers.map(header => (
                 <th
                   key={header.id}
-                  className={`px-3 h-8 text-left font-medium ${
+                  className={`px-3 h-8 text-left font-medium relative ${
                     header.index !== 0 ? 'border-l border-[#ECEBE9]' : ''
                   } border-b border-[#ECEBE9]`}
                   style={{ 
                     fontSize: '12px', 
                     lineHeight: '16px', 
                     color: '#514E48',
-                    width: header.id === 'select' ? 48 : header.id === 'fileName' ? 220 : 280
+                    width: header.column.getSize(),
+                    position: 'relative'
                   }}
                 >
                   {header.isPlaceholder
@@ -502,6 +528,32 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top' 
                         header.column.columnDef.header,
                         header.getContext()
                       )}
+                  {header.column.getCanResize() && (
+                    <div
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      className={`absolute right-0 top-0 cursor-col-resize select-none touch-none group`}
+                      style={{
+                        width: '4px',
+                        height: '2000px',
+                        transform: 'translateX(50%)',
+                        zIndex: 10,
+                      }}
+                    >
+                      {/* Visual line that appears on hover or when resizing */}
+                      <div
+                        className={`absolute left-1/2 top-0 h-full transition-opacity ${
+                          header.column.getIsResizing() 
+                            ? 'bg-neutral-900 opacity-100' 
+                            : 'bg-neutral-400 opacity-0 group-hover:opacity-100'
+                        }`}
+                        style={{
+                          width: '1.5px',
+                          transform: 'translateX(-50%)',
+                        }}
+                      />
+                    </div>
+                  )}
                 </th>
               ))}
             </tr>
@@ -525,7 +577,9 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top' 
                       minHeight: '32px', 
                       maxHeight: '140px', 
                       verticalAlign: getVerticalAlign(),
-                      width: cell.column.id === 'select' ? 48 : cell.column.id === 'fileName' ? 220 : 280
+                      width: cell.column.getSize(),
+                      maxWidth: cell.column.getSize(),
+                      overflow: 'hidden'
                     }}
                     onMouseEnter={isSelectColumn ? () => setHoveredRow(row.original.id) : undefined}
                     onMouseLeave={isSelectColumn ? () => setHoveredRow(null) : undefined}

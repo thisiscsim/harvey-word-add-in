@@ -23,14 +23,22 @@ interface ReviewTableToolbarProps {
   onCloseArtifact?: () => void;
   alignment?: 'top' | 'center' | 'bottom';
   onAlignmentChange?: (alignment: 'top' | 'center' | 'bottom') => void;
+  textWrap?: boolean;
+  onTextWrapChange?: (wrap: boolean) => void;
 }
 
-export default function ReviewTableToolbar({ chatOpen, onToggleChat, onCloseArtifact, alignment = 'top', onAlignmentChange }: ReviewTableToolbarProps) {
+export default function ReviewTableToolbar({ chatOpen, onToggleChat, onCloseArtifact, alignment = 'top', onAlignmentChange, textWrap = true, onTextWrapChange }: ReviewTableToolbarProps) {
   const [activeView, setActiveView] = useState<'top' | 'center' | 'bottom'>(alignment);
+  const [isTextWrap, setIsTextWrap] = useState<boolean>(textWrap);
   
   const handleAlignmentChange = (newAlignment: 'top' | 'center' | 'bottom') => {
     setActiveView(newAlignment);
     onAlignmentChange?.(newAlignment);
+  };
+  
+  const handleTextWrapChange = (wrap: boolean) => {
+    setIsTextWrap(wrap);
+    onTextWrapChange?.(wrap);
   };
   return (
     <TooltipProvider>
@@ -165,6 +173,60 @@ export default function ReviewTableToolbar({ chatOpen, onToggleChat, onCloseArti
               </TooltipTrigger>
               <TooltipContent>
                 <p>Bottom align</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
+          {/* Separator */}
+          <div className="w-px bg-neutral-200" style={{ height: '20px' }}></div>
+
+          {/* Text wrapping options */}
+          <div className="flex items-center gap-1">
+            {/* Text wrap */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={() => handleTextWrapChange(true)}
+                  className={`p-2 rounded-md transition-colors ${
+                    isTextWrap 
+                      ? 'bg-neutral-200 text-neutral-900 hover:bg-neutral-300' 
+                      : 'text-neutral-600 hover:bg-neutral-100'
+                  }`}
+                >
+                  <Image 
+                    src="/wrapping.svg" 
+                    alt="Text wrap" 
+                    width={16} 
+                    height={16}
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Text wrap</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Text overflow */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={() => handleTextWrapChange(false)}
+                  className={`p-2 rounded-md transition-colors ${
+                    !isTextWrap 
+                      ? 'bg-neutral-200 text-neutral-900 hover:bg-neutral-300' 
+                      : 'text-neutral-600 hover:bg-neutral-100'
+                  }`}
+                >
+                  <Image 
+                    src="/overflow.svg" 
+                    alt="Text overflow" 
+                    width={16} 
+                    height={16}
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Text overflow</p>
               </TooltipContent>
             </Tooltip>
           </div>

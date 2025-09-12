@@ -53,6 +53,7 @@ export default function ReviewTablePanel({
   onSourcesDrawerOpenChange
 }: ReviewTablePanelProps) {
   const [alignment, setAlignment] = useState<'top' | 'center' | 'bottom'>('top');
+  const [textWrap, setTextWrap] = useState<boolean>(true);
   
   // Placeholder for tanstack table state and logic
   return (
@@ -157,6 +158,8 @@ export default function ReviewTablePanel({
           onCloseArtifact={onClose}
           alignment={alignment}
           onAlignmentChange={setAlignment}
+          textWrap={textWrap}
+          onTextWrapChange={setTextWrap}
         />
         
         {/* Content Area - Review Table */}
@@ -172,6 +175,7 @@ export default function ReviewTablePanel({
               { id: 'zscaler', name: 'Zscaler', logo: '/company-precedent-logo/zscaler.jpg', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' }
             ]}
             alignment={alignment}
+            textWrap={textWrap}
           />
           </div>
         </div>
