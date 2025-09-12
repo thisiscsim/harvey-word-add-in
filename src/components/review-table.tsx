@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
   ColumnDef,
 } from '@tanstack/react-table';
-import { TextShimmer } from '../../components/motion-primitives/text-shimmer';
-import { motion } from 'framer-motion';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // SVG Icon Components
 const TriangleAlertIcon = ({ className }: { className?: string }) => (
@@ -284,73 +283,7 @@ const getRandomRiskText = () => {
 };
 
 
-// Independent animation overlay component
-const AnimationOverlay = React.memo(
-  ({
-    isVisible,
-    cellId,
-    columnId,
-    columnIndex,
-  }: {
-    isVisible: boolean;
-    cellId: string;
-    columnId: string;
-    columnIndex?: number;
-  }) => {
-    if (!isVisible) return null;
-
-    return (
-      <div
-        className='absolute flex items-center justify-between'
-        style={{
-          top: '50%',
-          transform: 'translateY(-50%)',
-          left: `${328 + (columnIndex || 0) * 280}px`, // 48 + 280 + (columnIndex * 280)
-          width: '278px',
-          height: '28px',
-          paddingLeft: '12px',
-          fontSize: '12px',
-          lineHeight: '16px',
-          zIndex: 10,
-        }}
-      >
-        <div style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>
-          <TextShimmer key={`shimmer-${cellId}`} duration={1.5} spread={2}>
-            Generating output...
-          </TextShimmer>
-        </div>
-        <div
-          className='relative flex items-center justify-center'
-          style={{
-            marginLeft:
-              columnId === 'agreementParties'
-                ? '118px'
-                : columnId === 'assignmentProvisionSummary'
-                  ? '112px'
-                  : '0px',
-          }}
-        >
-          <motion.div
-            key={`pulse-${cellId}`}
-            className='w-3 h-3 bg-gray-400/60 rounded-full'
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.6, 1, 0.6],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
-          <div className='absolute w-1.5 h-1.5 bg-black rounded-full'></div>
-        </div>
-      </div>
-    );
-  }
-);
-
-AnimationOverlay.displayName = 'AnimationOverlay';
+// AnimationOverlay component removed - no longer needed without loading states
 
 interface SelectedCompany {
   id: string;
@@ -363,9 +296,35 @@ interface ReviewTableProps {
 }
 
 export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps) {
-  const [loadingStates, setLoadingStates] = useState<
-    Record<number, Record<string, boolean>>
-  >({});
+  // State for selected rows
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  
+  // Handle row selection
+  const toggleRowSelection = React.useCallback((rowId: number) => {
+    setSelectedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+      }
+      return newSet;
+    });
+  }, []);
+  
+  // Handle select all
+  const toggleSelectAll = React.useCallback(() => {
+    if (selectedRows.size === data.length) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(data.map(row => row.id)));
+    }
+  }, [selectedRows.size]);
+  
+  // Check if all rows are selected
+  const isAllSelected = selectedRows.size === data.length && selectedRows.size > 0;
+  const isIndeterminate = selectedRows.size > 0 && selectedRows.size < data.length;
   
   // Generate random text once for each cell and memoize it
   const selectedCompanyIds = selectedCompanies.map(c => c.id).join(',');
@@ -381,50 +340,38 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompanyIds]);
 
-  useEffect(() => {
-    // Initialize loading states for all rows
-    const initialStates: typeof loadingStates = {};
-    data.forEach(row => {
-      initialStates[row.id] = {};
-      selectedCompanies.forEach(company => {
-        initialStates[row.id][company.id] = true;
-      });
-    });
-    setLoadingStates(initialStates);
-
-    // Set up staggered timeouts for revealing data
-    data.forEach((row, index) => {
-      const baseDelay = 2000; // Base delay before any data starts showing
-      const staggerDelay = index * 300; // Stagger each row by 300ms
-
-      selectedCompanies.forEach((company, companyIndex) => {
-        setTimeout(() => {
-          setLoadingStates(prev => ({
-            ...prev,
-            [row.id]: {
-              ...prev[row.id],
-              [company.id]: false,
-            },
-          }));
-        }, baseDelay + staggerDelay + (companyIndex * 400));
-      });
-    });
-  }, [selectedCompanies]);
-
   const columns = React.useMemo(() => {
     const baseColumns: ColumnDef<Document>[] = [
       {
         id: 'select',
         header: () => (
           <div className='flex justify-center'>
-            <input type='checkbox' className='custom-checkbox' />
+            <Checkbox 
+              checked={isAllSelected}
+              onCheckedChange={toggleSelectAll}
+              aria-label="Select all"
+            />
           </div>
         ),
-        cell: ({ row }) => (
-          <div className='flex justify-center'>
-            <span>{row.index + 1}</span>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const isSelected = selectedRows.has(row.original.id);
+          const isHovered = hoveredRow === row.original.id;
+          const showCheckbox = isSelected || isHovered;
+          
+          return (
+            <div className='flex justify-center h-full items-center'>
+              {showCheckbox ? (
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => toggleRowSelection(row.original.id)}
+                  aria-label={`Select row ${row.index + 1}`}
+                />
+              ) : (
+                <span className="text-neutral-500">{row.index + 1}</span>
+              )}
+            </div>
+          );
+        },
       },
       {
         id: 'fileName',
@@ -461,14 +408,11 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
         size: 280,
         maxSize: 280,
         cell: ({ getValue, row }) => {
-          const isLoading = loadingStates[row.original.id]?.[company.id];
           const cellKey = `${row.original.id}-${company.id}`;
           const value = String(getValue() || cellTexts[cellKey] || '');
           return (
             <div
-              className={`transition-opacity duration-200 overflow-y-auto ${
-                isLoading ? 'opacity-0' : 'opacity-100'
-              }`}
+              className="overflow-y-auto"
               style={{ 
                 maxHeight: '120px',
                 wordBreak: 'break-word',
@@ -484,7 +428,7 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
     });
 
     return baseColumns;
-  }, [selectedCompanies, loadingStates, cellTexts]);
+  }, [selectedCompanies, cellTexts, isAllSelected, selectedRows, hoveredRow, toggleSelectAll, toggleRowSelection]);
 
   const table = useReactTable({
     data,
@@ -493,8 +437,8 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
   });
 
   return (
-    <div className='relative h-full overflow-x-auto'>
-      <div style={{ minWidth: 'max-content' }}>
+    <div className='relative h-full min-w-0'>
+      <div className='inline-block min-w-max'>
         <table className='border-separate border-spacing-0 border-b border-[#ECEBE9]' style={{ tableLayout: 'fixed' }}>
           <colgroup>
             {columns.map((col) => (
@@ -507,7 +451,7 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
               {headerGroup.headers.map(header => (
                 <th
                   key={header.id}
-                  className={`px-3 h-8 text-left font-medium bg-[#FAFAF9] ${
+                  className={`px-3 h-8 text-left font-medium ${
                     header.index !== 0 ? 'border-l border-[#ECEBE9]' : ''
                   } border-b border-[#ECEBE9]`}
                   style={{ 
@@ -529,14 +473,17 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map(row => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map(cell => {
-                const cellPadding = 'px-3 py-2';
-                return (
-                  <td
-                    key={cell.id}
-                    className={`${cellPadding} bg-white ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} border-b border-[#ECEBE9] relative`}
+          {table.getRowModel().rows.map(row => {
+            const isRowSelected = selectedRows.has(row.original.id);
+            return (
+              <tr key={row.id}>
+                {row.getVisibleCells().map(cell => {
+                  const cellPadding = 'px-3 py-2';
+                  const isSelectColumn = cell.column.id === 'select';
+                  return (
+                    <td
+                      key={cell.id}
+                      className={`${cellPadding} ${isRowSelected ? 'bg-[#FAFAF9]' : 'bg-white'} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} border-b border-[#ECEBE9] relative ${isSelectColumn ? 'cursor-pointer' : ''}`}
                     style={{ 
                       fontSize: '12px', 
                       lineHeight: '16px', 
@@ -545,6 +492,8 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
                       verticalAlign: 'top',
                       width: cell.column.id === 'select' ? 48 : cell.column.id === 'fileName' ? 220 : 280
                     }}
+                    onMouseEnter={isSelectColumn ? () => setHoveredRow(row.original.id) : undefined}
+                    onMouseLeave={isSelectColumn ? () => setHoveredRow(null) : undefined}
                   >
                     {flexRender(
                       cell.column.columnDef.cell,
@@ -552,9 +501,10 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
                     )}
                   </td>
                 );
-              })}
-            </tr>
-          ))}
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       </div>

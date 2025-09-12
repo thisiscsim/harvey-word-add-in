@@ -18,6 +18,7 @@ import ExportThreadDialog from "@/components/export-thread-dialog";
 import ExportReviewDialog from "@/components/export-review-dialog";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, useSidebar } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import ArtifactCard from "@/components/artifact-card";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
@@ -127,6 +128,7 @@ type Message = {
     subtitle: string;
   };
   reviewTableMessage?: string;
+  selectedCounselFilter?: 'latham' | 'nofilter';
 };
 
 // Shared animation configuration for consistency - refined timing
@@ -1549,27 +1551,50 @@ export default function AssistantChatPage({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
                               >
-                                <button 
-                                  className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
-                                  onClick={() => {
-                                    // Handle Latham & Watkins filter selection
-                                    console.log('Selected: Latham & Watkins only');
-                                    
-                                    // First show time window thinking state
-                                    setMessages(prev => prev.map((msg, idx) => {
-                                      if (idx === prev.length - 1 && msg.role === 'assistant') {
-                                        return {
-                                          ...msg,
-                                          showTimeWindowThinking: true,
-                                          timeWindowThinkingState: {
-                                            isLoading: true,
-                                            showSummary: false,
-                                            visibleBullets: 0
-                                          }
-                                        };
-                                      }
-                                      return msg;
-                                    }));
+                                <AnimatePresence mode="popLayout">
+                                  {(!message.selectedCounselFilter || message.selectedCounselFilter === 'latham') && (
+                                    <motion.button
+                                      key="latham-button"
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      exit={{ opacity: 0, scale: 0.95 }}
+                                      transition={{ duration: 0.2, ease: "easeOut" }}
+                                      className={cn(
+                                        "py-1.5 px-3 bg-white rounded-md transition-all flex items-center gap-1.5",
+                                        message.selectedCounselFilter === 'latham' 
+                                          ? "bg-neutral-100" 
+                                          : "border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300"
+                                      )}
+                                    onClick={() => {
+                                      // Handle Latham & Watkins filter selection
+                                      console.log('Selected: Latham & Watkins only');
+                                      
+                                      // Update selected filter
+                                      setMessages(prev => prev.map((msg, idx) => {
+                                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                          return {
+                                            ...msg,
+                                            selectedCounselFilter: 'latham'
+                                          };
+                                        }
+                                        return msg;
+                                      }));
+                                      
+                                      // First show time window thinking state
+                                      setMessages(prev => prev.map((msg, idx) => {
+                                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                          return {
+                                            ...msg,
+                                            showTimeWindowThinking: true,
+                                            timeWindowThinkingState: {
+                                              isLoading: true,
+                                              showSummary: false,
+                                              visibleBullets: 0
+                                            }
+                                          };
+                                        }
+                                        return msg;
+                                      }));
                                     
                                     // Simulate thinking state progress
                                     setTimeout(() => {
@@ -1627,14 +1652,37 @@ export default function AssistantChatPage({
                                     }, 2800);
                                   }}
                                 >
-                                  <span className="text-neutral-900 text-sm font-medium">Latham & Watkins only</span>
-                                </button>
-                                
-                                <button 
-                                  className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
-                                  onClick={() => {
-                                    // Handle no filter selection
-                                    console.log('Selected: No filter');
+                                  <span className="text-neutral-900 text-sm font-normal">Latham & Watkins only</span>
+                                    </motion.button>
+                                  )}
+                                  
+                                  {(!message.selectedCounselFilter || message.selectedCounselFilter === 'nofilter') && (
+                                    <motion.button
+                                      key="nofilter-button"
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      exit={{ opacity: 0, scale: 0.95 }}
+                                      transition={{ duration: 0.2, ease: "easeOut" }}
+                                      className={cn(
+                                        "py-1.5 px-3 bg-white rounded-md transition-all flex items-center gap-1.5",
+                                        message.selectedCounselFilter === 'nofilter' 
+                                          ? "bg-neutral-100" 
+                                          : "border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300"
+                                      )}
+                                    onClick={() => {
+                                      // Handle no filter selection
+                                      console.log('Selected: No filter');
+                                      
+                                      // Update selected filter
+                                      setMessages(prev => prev.map((msg, idx) => {
+                                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                          return {
+                                            ...msg,
+                                            selectedCounselFilter: 'nofilter'
+                                          };
+                                        }
+                                        return msg;
+                                      }));
                                     
                                     // First show time window thinking state
                                     setMessages(prev => prev.map((msg, idx) => {
@@ -1708,8 +1756,10 @@ export default function AssistantChatPage({
                                     }, 2800);
                                   }}
                                 >
-                                  <span className="text-neutral-900 text-sm font-medium">No filter</span>
-                                </button>
+                                  <span className="text-neutral-900 text-sm font-normal">No filter</span>
+                                    </motion.button>
+                                  )}
+                                </AnimatePresence>
                               </motion.div>
                             )}
                           </AnimatePresence>
@@ -2070,38 +2120,38 @@ export default function AssistantChatPage({
                               <div className="pl-2 mt-4">
                                 <div className="flex flex-wrap gap-2">
                               <button 
-                                className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
+                                className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50 hover:border-neutral-300 transition-all flex items-center gap-1.5"
                                 onClick={() => setIsFileManagementOpen(true)}
                               >
                                 <CloudUpload size={16} className="text-neutral-600" />
-                                <span className="text-neutral-900 text-sm font-medium">Upload files</span>
+                                <span className="text-neutral-900 text-sm font-normal">Upload files</span>
                               </button>
                               
                               <button 
-                                className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
+                                className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50 hover:border-neutral-300 transition-all flex items-center gap-1.5"
                                 onClick={() => setIsiManagePickerOpen(true)}
                               >
                                 <Image src="/imanage.svg" alt="" width={16} height={16} />
-                                <span className="text-neutral-900 text-sm font-medium">Add from iManage</span>
+                                <span className="text-neutral-900 text-sm font-normal">Add from iManage</span>
                               </button>
                               
-                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5">
+                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50 hover:border-neutral-300 transition-all flex items-center gap-1.5">
                                 <Image src="/sharepoint.svg" alt="" width={16} height={16} />
-                                <span className="text-neutral-900 text-sm font-medium">Add from SharePoint</span>
+                                <span className="text-neutral-900 text-sm font-normal">Add from SharePoint</span>
                               </button>
                               
-                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5">
+                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50 hover:border-neutral-300 transition-all flex items-center gap-1.5">
                                 <Image src="/google-drive.svg" alt="" width={16} height={16} />
-                                <span className="text-neutral-900 text-sm font-medium">Add from Google Drive</span>
+                                <span className="text-neutral-900 text-sm font-normal">Add from Google Drive</span>
                               </button>
                               
-                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5">
+                              <button className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50 hover:border-neutral-300 transition-all flex items-center gap-1.5">
                                 <Image src="/folderIcon.svg" alt="" width={16} height={16} />
-                                <span className="text-neutral-900 text-sm font-medium">Add from Vault project</span>
+                                <span className="text-neutral-900 text-sm font-normal">Add from Vault project</span>
                               </button>
                               
                               <button 
-                                className="py-1 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors"
+                                className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:bg-neutral-50 hover:border-neutral-300 transition-all"
                                 onClick={() => {
                                   // Skip and send a follow-up message
                                   const skipMessage = message.workflowTitle?.toLowerCase().includes('risk factors') 
@@ -2111,7 +2161,7 @@ export default function AssistantChatPage({
                                   sendMessage(skipMessage);
                                 }}
                               >
-                                <span className="text-neutral-900 text-sm font-medium">Skip</span>
+                                <span className="text-neutral-900 text-sm font-normal">Skip</span>
                               </button>
                                 </div>
                               </div>
@@ -2439,9 +2489,8 @@ export default function AssistantChatPage({
       {/* Unified Artifact Panel - Right Panel */}
       <AnimatePresence>
         {unifiedArtifactPanelOpen && currentArtifactType && (
-          <>
-            {currentArtifactType === 'draft' ? (
-              <DraftArtifactPanel
+          currentArtifactType === 'draft' ? (
+            <DraftArtifactPanel
                 selectedArtifact={selectedDraftArtifact}
                 isEditingArtifactTitle={isEditingDraftArtifactTitle}
                 editedArtifactTitle={editedDraftArtifactTitle}
@@ -2467,8 +2516,8 @@ export default function AssistantChatPage({
                 sourcesDrawerOpen={sourcesDrawerOpen}
                 onSourcesDrawerOpenChange={setSourcesDrawerOpen}
               />
-            ) : currentArtifactType === 'review-table' ? (
-              <ReviewTablePanel
+          ) : currentArtifactType === 'review-table' ? (
+            <ReviewTablePanel
                 selectedArtifact={selectedReviewTableArtifact}
                 isEditingArtifactTitle={isEditingReviewTableArtifactTitle}
                 editedArtifactTitle={editedReviewTableArtifactTitle}
@@ -2494,8 +2543,7 @@ export default function AssistantChatPage({
                 sourcesDrawerOpen={sourcesDrawerOpen}
                 onSourcesDrawerOpenChange={setSourcesDrawerOpen}
               />
-            ) : null}
-          </>
+          ) : null
         )}
       </AnimatePresence>
 
