@@ -4,9 +4,7 @@ import {
   ChevronsLeft, 
   ChevronsRight,
   ListFilter,
-  Cog,
-  MoveHorizontal,
-  Rows3
+  Cog
 } from "lucide-react";
 import {
   Tooltip,
@@ -231,57 +229,6 @@ export default function ReviewTableToolbar({ chatOpen, onToggleChat, onCloseArti
             </Tooltip>
           </div>
 
-          {/* Separator */}
-          <div className="w-px bg-neutral-200" style={{ height: '20px' }}></div>
-
-          {/* Column actions */}
-          <div className="flex items-center gap-1">
-            {/* Resize columns */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button 
-                  className="p-2 rounded-md transition-colors hover:bg-neutral-100 text-neutral-600"
-                >
-                  <MoveHorizontal size={16} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Resize columns</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Row height */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button 
-                  className="p-2 rounded-md transition-colors hover:bg-neutral-100 text-neutral-600"
-                >
-                  <Rows3 size={16} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Adjust row height</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Pin columns */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button 
-                  className="p-2 rounded-md transition-colors hover:bg-neutral-100 text-neutral-600"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 2v6m0 0L9 5m3 3l3-3" />
-                    <path d="M12 8v14" />
-                    <rect x="8" y="14" width="8" height="8" fill="none" />
-                  </svg>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Pin/unpin columns</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
         </div>
         
         <div className="flex items-center gap-2">

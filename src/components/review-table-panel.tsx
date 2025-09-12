@@ -163,9 +163,9 @@ export default function ReviewTablePanel({
         />
         
         {/* Content Area - Review Table */}
-        <div className="flex-1 min-w-0 overflow-y-auto bg-neutral-0" style={{ minHeight: 0 }}>
-          {/* Horizontal scroll container just for the table */}
-          <div className="overflow-x-auto">
+        <div className="flex-1 min-w-0 bg-neutral-0" style={{ minHeight: 0 }}>
+          {/* Table container without vertical scroll */}
+          <div className="h-full">
           <ReviewTable 
             selectedCompanies={[
               { id: 'crowdstrike', name: 'Crowdstrike', logo: '/company-precedent-logo/crowdstrike.jpg', s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm' },

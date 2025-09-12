@@ -364,6 +364,8 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top',
       {
         id: 'select',
         size: 48,
+        minSize: 48,
+        maxSize: 48,
         enableResizing: false,
         header: () => (
           <div className='flex justify-center'>
@@ -487,8 +489,8 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top',
   });
 
   return (
-    <div className='relative h-full min-w-0'>
-      <div className='inline-block relative overflow-hidden'>
+    <div className='relative h-full min-w-0 overflow-auto'>
+      <div className='inline-block relative'>
         <table 
           className={`border-separate border-spacing-0 border-b border-[#ECEBE9] ${
             table.getState().columnSizingInfo.isResizingColumn ? 'select-none' : ''
@@ -505,13 +507,13 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top',
               />
             ))}
           </colgroup>
-          <thead>
+          <thead className="sticky top-0 z-20 bg-white">
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => (
                 <th
                   key={header.id}
-                  className={`px-3 h-8 text-left font-medium relative ${
+                  className={`px-3 h-8 text-left font-medium relative bg-white ${
                     header.index !== 0 ? 'border-l border-[#ECEBE9]' : ''
                   } border-b border-[#ECEBE9]`}
                   style={{ 
