@@ -59,17 +59,18 @@ export default function ReviewTablePanel({
   return (
     <>
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: '100%', opacity: 1 }}
+        exit={{ width: 0, opacity: 0 }}
         transition={{
+          width: PANEL_ANIMATION,
           opacity: { duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }
         }}
-        className="flex-1 basis-0 min-w-0 flex flex-col bg-neutral-50 overflow-hidden"
+        className="flex-1 min-w-0 flex flex-col bg-neutral-50 overflow-x-hidden"
       >
         {/* Header */}
         <div className="px-3 py-4 border-b border-neutral-200 bg-neutral-0 flex items-center justify-between" style={{ height: '52px' }}>
-          <div className="flex items-center min-w-0">
+          <div className="flex items-center">
             {/* Editable Artifact Title */}
             {isEditingArtifactTitle ? (
               <input

@@ -81,7 +81,7 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
 
   return (
     <TooltipProvider>
-      <div className="px-3 py-2 border-b border-neutral-200 bg-white flex items-center justify-between overflow-x-auto" style={{ minHeight: '52px' }}>
+      <div className="px-3 py-2 border-b border-neutral-200 bg-white flex items-center justify-between" style={{ minHeight: '52px' }}>
         <div className="flex items-center gap-1">
           {/* Toggle Chat Button */}
           <Tooltip>

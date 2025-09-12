@@ -1198,7 +1198,7 @@ export default function AssistantChatPage({
             </div>
             
             {/* Conditional buttons based on artifact panel state */}
-            {!artifactPanelOpen && !draftArtifactPanelOpen ? (
+            {!anyArtifactPanelOpen ? (
               // When artifact panel is collapsed, show full secondary buttons
               <div className="flex gap-2 items-center">
                 <Button 

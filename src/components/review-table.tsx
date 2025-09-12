@@ -406,7 +406,7 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top',
           </div>
         ),
         size: 220,
-        minSize: 150,
+        minSize: 100,
         maxSize: 400,
         cell: ({ getValue }) => (
           <span className={`block ${textWrap ? '' : 'truncate'}`} style={{ 
@@ -441,7 +441,7 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top',
           </div>
         ),
         size: 280,
-        minSize: 200,
+        minSize: 150,
         maxSize: 500,
         cell: ({ getValue, row }) => {
           const cellKey = `${row.original.id}-${company.id}`;
@@ -489,8 +489,8 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top',
   });
 
   return (
-    <div className='relative h-full min-w-0 overflow-auto'>
-      <div className='inline-block relative'>
+    <div className='h-full min-w-0 relative'>
+      <div className='absolute inset-0 overflow-x-auto overflow-y-auto'>
         <table 
           className={`border-separate border-spacing-0 border-b border-[#ECEBE9] ${
             table.getState().columnSizingInfo.isResizingColumn ? 'select-none' : ''
