@@ -129,6 +129,7 @@ type Message = {
   };
   reviewTableMessage?: string;
   selectedCounselFilter?: 'latham' | 'nofilter';
+  isPrecedentTableConfirmed?: boolean;
 };
 
 // Shared animation configuration for consistency - refined timing
@@ -1882,6 +1883,7 @@ export default function AssistantChatPage({
                                 variant="analysis"
                                 title={message.edgarReviewLoadingState?.isLoading ? "Reviewing EDGAR filings..." : "Reviewed EDGAR filings"}
                                 durationSeconds={undefined}
+                                icon={FileSearch}
                                 summary={message.edgarReviewContent.summary}
                                 customContent={
                                   <motion.div 
@@ -1958,14 +1960,23 @@ export default function AssistantChatPage({
                                     >
                                       <PrecedentCompaniesTable 
                                         data={message.precedentCompaniesData}
+                                        isConfirmed={message.isPrecedentTableConfirmed || false}
                                         onConfirm={(selectedCompanies) => {
                                           console.log('Selected companies:', selectedCompanies);
                                           
-                                          // Update the current message to show thinking state
+                                          // Update the current message to show thinking state and mark as confirmed
                                           setMessages(prev => prev.map((msg, idx) => {
                                             if (idx === prev.length - 1 && msg.role === 'assistant' && msg.precedentCompaniesData) {
+                                              // Update the precedentCompaniesData to reflect current selections
+                                              const updatedData = msg.precedentCompaniesData.map(company => ({
+                                                ...company,
+                                                selected: selectedCompanies.some(selected => selected.id === company.id)
+                                              }));
+                                              
                                               return {
                                                 ...msg,
+                                                precedentCompaniesData: updatedData,
+                                                isPrecedentTableConfirmed: true,
                                                 showReviewTableGeneration: true,
                                                 reviewTableGenerationLoadingState: {
                                                   isLoading: true,

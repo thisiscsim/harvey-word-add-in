@@ -515,6 +515,8 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top',
                   key={header.id}
                   className={`px-3 h-8 text-left font-medium relative bg-white ${
                     header.index !== 0 ? 'border-l border-[#ECEBE9]' : ''
+                  } ${
+                    header.index === headerGroup.headers.length - 1 ? 'border-r border-[#ECEBE9]' : ''
                   } border-b border-[#ECEBE9]`}
                   style={{ 
                     fontSize: '12px', 
@@ -572,7 +574,7 @@ export default function ReviewTable({ selectedCompanies = [], alignment = 'top',
                   return (
                     <td
                       key={cell.id}
-                      className={`${cellPadding} ${isRowSelected ? 'bg-[#FAFAF9]' : 'bg-white'} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} border-b border-[#ECEBE9] relative ${isSelectColumn ? 'cursor-pointer' : ''}`}
+                      className={`${cellPadding} ${isRowSelected ? 'bg-[#FAFAF9]' : 'bg-white'} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} ${row.getVisibleCells().indexOf(cell) === row.getVisibleCells().length - 1 ? 'border-r border-[#ECEBE9]' : ''} border-b border-[#ECEBE9] relative ${isSelectColumn ? 'cursor-pointer' : ''}`}
                     style={{ 
                       fontSize: '12px', 
                       lineHeight: '16px', 

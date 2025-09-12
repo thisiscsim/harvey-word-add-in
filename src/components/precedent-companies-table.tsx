@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -35,16 +35,23 @@ interface PrecedentCompaniesTableProps {
   data: CompanyData[];
   onSelectionChange?: (selectedCompanies: CompanyData[]) => void;
   onConfirm?: (selectedCompanies: CompanyData[]) => void;
+  isConfirmed?: boolean;
 }
 
 export default function PrecedentCompaniesTable({ 
   data: initialData, 
   onSelectionChange,
-  onConfirm 
+  onConfirm,
+  isConfirmed: isConfirmedProp = false
 }: PrecedentCompaniesTableProps) {
   const [data, setData] = useState<CompanyData[]>(initialData);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(isConfirmedProp);
+
+  // Update isConfirmed when prop changes
+  useEffect(() => {
+    setIsConfirmed(isConfirmedProp);
+  }, [isConfirmedProp]);
 
   const columns: ColumnDef<CompanyData>[] = useMemo(() => [
     {
