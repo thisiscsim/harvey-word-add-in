@@ -289,6 +289,7 @@ interface SelectedCompany {
   id: string;
   name: string;
   logo?: string;
+  s1Url?: string;
 }
 
 interface ReviewTableProps {
@@ -329,11 +330,14 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
   // Generate random text once for each cell and memoize it
   const selectedCompanyIds = selectedCompanies.map(c => c.id).join(',');
   const cellTexts = React.useMemo(() => {
-    const texts: Record<string, string> = {};
+    const texts: Record<string, string | null> = {};
     data.forEach(row => {
       selectedCompanies.forEach(company => {
         const key = `${row.id}-${company.id}`;
-        texts[key] = getRandomRiskText();
+        // Add some randomness to simulate extraction failures
+        // About 10% of cells will be empty
+        const shouldBeEmpty = Math.random() < 0.1;
+        texts[key] = shouldBeEmpty ? null : getRandomRiskText();
       });
     });
     return texts;
@@ -402,14 +406,32 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
               alt={company.name} 
               className="w-3 h-3 rounded-full object-cover" 
             />
-            <span>{company.name}</span>
+            <a 
+              href={company.s1Url || "https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors cursor-pointer hover:text-neutral-900"
+              style={{ textDecoration: 'none', color: '#514E48' }}
+            >
+              {company.name}
+            </a>
           </div>
         ),
         size: 280,
         maxSize: 280,
         cell: ({ getValue, row }) => {
           const cellKey = `${row.original.id}-${company.id}`;
-          const value = String(getValue() || cellTexts[cellKey] || '');
+          const cellText = cellTexts[cellKey];
+          const value = getValue() || cellText;
+          
+          if (value === null || value === '') {
+            return (
+              <div className="text-neutral-400" style={{ fontSize: '12px', lineHeight: '16px' }}>
+                No information
+              </div>
+            );
+          }
+          
           return (
             <div
               className="overflow-y-auto"
@@ -420,7 +442,7 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
                 lineHeight: '1.4'
               }}
             >
-              {value}
+              {String(value)}
             </div>
           );
         },
