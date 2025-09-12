@@ -366,6 +366,20 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
   const [loadingStates, setLoadingStates] = useState<
     Record<number, Record<string, boolean>>
   >({});
+  
+  // Generate random text once for each cell and memoize it
+  const selectedCompanyIds = selectedCompanies.map(c => c.id).join(',');
+  const cellTexts = React.useMemo(() => {
+    const texts: Record<string, string> = {};
+    data.forEach(row => {
+      selectedCompanies.forEach(company => {
+        const key = `${row.id}-${company.id}`;
+        texts[key] = getRandomRiskText();
+      });
+    });
+    return texts;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCompanyIds]);
 
   useEffect(() => {
     // Initialize loading states for all rows
@@ -448,7 +462,8 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
         maxSize: 280,
         cell: ({ getValue, row }) => {
           const isLoading = loadingStates[row.original.id]?.[company.id];
-          const value = String(getValue() || getRandomRiskText());
+          const cellKey = `${row.original.id}-${company.id}`;
+          const value = String(getValue() || cellTexts[cellKey] || '');
           return (
             <div
               className={`transition-opacity duration-200 overflow-y-auto ${
@@ -469,7 +484,7 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
     });
 
     return baseColumns;
-  }, [selectedCompanies, loadingStates]);
+  }, [selectedCompanies, loadingStates, cellTexts]);
 
   const table = useReactTable({
     data,
@@ -479,8 +494,13 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
 
   return (
     <div className='relative h-full overflow-x-auto'>
-      <div className='inline-block min-w-full border-b border-[#ECEBE9]'>
-        <table className='border-separate border-spacing-0' style={{ tableLayout: 'fixed' }}>
+      <div style={{ minWidth: 'max-content' }}>
+        <table className='border-separate border-spacing-0 border-b border-[#ECEBE9]' style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            {columns.map((col) => (
+              <col key={col.id} style={{ width: col.id === 'select' ? 48 : col.id === 'fileName' ? 220 : 280 }} />
+            ))}
+          </colgroup>
           <thead>
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
@@ -488,9 +508,14 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
                 <th
                   key={header.id}
                   className={`px-3 h-8 text-left font-medium bg-[#FAFAF9] ${
-                    header.id === 'select' ? 'w-[48px]' : 'w-[280px] max-w-[280px]'
-                  } ${header.index !== 0 ? 'border-l border-[#ECEBE9]' : ''} border-b border-[#ECEBE9]`}
-                  style={{ fontSize: '12px', lineHeight: '16px', color: '#514E48' }}
+                    header.index !== 0 ? 'border-l border-[#ECEBE9]' : ''
+                  } border-b border-[#ECEBE9]`}
+                  style={{ 
+                    fontSize: '12px', 
+                    lineHeight: '16px', 
+                    color: '#514E48',
+                    width: header.id === 'select' ? 48 : header.id === 'fileName' ? 220 : 280
+                  }}
                 >
                   {header.isPlaceholder
                     ? null
@@ -511,8 +536,15 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
                 return (
                   <td
                     key={cell.id}
-                    className={`${cellPadding} bg-white ${cell.column.id === 'select' ? 'w-[48px]' : 'w-[280px] max-w-[280px]'} ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} border-b border-[#ECEBE9] relative`}
-                    style={{ fontSize: '12px', lineHeight: '16px', minHeight: '32px', maxHeight: '140px', verticalAlign: 'top' }}
+                    className={`${cellPadding} bg-white ${cell.column.id !== table.getAllColumns()[0].id ? 'border-l border-[#ECEBE9]' : ''} border-b border-[#ECEBE9] relative`}
+                    style={{ 
+                      fontSize: '12px', 
+                      lineHeight: '16px', 
+                      minHeight: '32px', 
+                      maxHeight: '140px', 
+                      verticalAlign: 'top',
+                      width: cell.column.id === 'select' ? 48 : cell.column.id === 'fileName' ? 220 : 280
+                    }}
                   >
                     {flexRender(
                       cell.column.columnDef.cell,
@@ -526,7 +558,6 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
         </tbody>
       </table>
       </div>
-
     </div>
   );
 }
