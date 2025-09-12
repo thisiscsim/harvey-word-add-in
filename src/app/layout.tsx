@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { HeroUIProvider } from "@heroui/react";
 
 export const metadata: Metadata = {
-  title: "Harvey - Time Machine",
+  title: "Harvey - S1 Workflow",
   description: "Professional Class AI for Legal Professionals",
 };
 
