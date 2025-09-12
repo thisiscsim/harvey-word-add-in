@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
+  ColumnDef,
 } from '@tanstack/react-table';
 import { TextShimmer } from '../../components/motion-primitives/text-shimmer';
 import { motion } from 'framer-motion';
@@ -23,7 +23,17 @@ type Document = {
   id: number;
   selected: boolean;
   fileName: string;
-  [key: string]: string | number | boolean; // Dynamic properties for company data
+  agreementParties?: string;
+  forceMajeureClause?: string;
+  assignmentProvisionSummary?: string;
+  company1?: string;
+  company2?: string;
+  company3?: string;
+  company4?: string;
+  company5?: string;
+  snowflake?: string;
+  cloudflare?: string;
+  [key: string]: string | number | boolean | undefined; // Dynamic properties for company data
 };
 
 const data: Document[] = [
@@ -48,8 +58,6 @@ const data: Document[] = [
     assignmentProvisionSummary: 'No assignment without prior written consent.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
     cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
-    snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 3,
@@ -61,8 +69,6 @@ const data: Document[] = [
       'No assignment without consent, null if viola...',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
     cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
-    snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
   {
     id: 4,
@@ -71,8 +77,6 @@ const data: Document[] = [
     agreementParties: 'Delta Airlines LLC (Georgia corporation)',
     forceMajeureClause: 'Not Disputed',
     assignmentProvisionSummary: 'No assignment without prior written consent.',
-    snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
     cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
@@ -125,8 +129,6 @@ const data: Document[] = [
     agreementParties: "Pilgrim's Pride Corporation (Shipper), Pat Pilgri...",
     forceMajeureClause: 'Somewhat Disputed',
     assignmentProvisionSummary: 'No assignment without prior written consent.',
-    snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
-    cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
     snowflake: 'Real or perceived errors, failures, or security breaches could result in claims against us, damage to our reputation, loss of customers, regulatory expenditures.',
     cloudflare: 'While we have achieved broad customer diversification, our enterprise segment includes several large customers whose contract renewals or expansions significantly impact our quarterly results.',
   },
@@ -281,7 +283,6 @@ const getRandomRiskText = () => {
   return riskTextVariations[Math.floor(Math.random() * riskTextVariations.length)];
 };
 
-const columnHelper = createColumnHelper<Document>();
 
 // Independent animation overlay component
 const AnimationOverlay = React.memo(
@@ -398,7 +399,7 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
 
   const columns = React.useMemo(() => {
     const baseColumns: ColumnDef<Document>[] = [
-      columnHelper.display({
+      {
         id: 'select',
         header: () => (
           <div className='flex justify-center'>
@@ -410,8 +411,10 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
             <span>{row.index + 1}</span>
           </div>
         ),
-      }),
-      columnHelper.accessor('fileName', {
+      },
+      {
+        id: 'fileName',
+        accessorFn: (row) => row.fileName,
         header: () => (
           <div className='flex items-center gap-1'>
             <TriangleAlertIcon />
@@ -421,48 +424,48 @@ export default function ReviewTable({ selectedCompanies = [] }: ReviewTableProps
         size: 280,
         maxSize: 280,
         cell: ({ getValue }) => (
-          <span className='block truncate'>{getValue()}</span>
+          <span className='block truncate'>{getValue() as string}</span>
         ),
-      }),
+      },
     ];
 
     // Dynamically add columns for each selected company
     selectedCompanies.forEach((company) => {
-      baseColumns.push(
-        columnHelper.accessor(company.id, {
-          header: () => (
-            <div className='flex items-center gap-1.5'>
-              <img 
-                src={company.logo || "/latham-logo.jpg"} 
-                alt={company.name} 
-                className="w-3 h-3 rounded-full object-cover" 
-              />
-              <span>{company.name}</span>
+      baseColumns.push({
+        id: company.id,
+        accessorFn: (row) => row[company.id] as string,
+        header: () => (
+          <div className='flex items-center gap-1.5'>
+            <img 
+              src={company.logo || "/latham-logo.jpg"} 
+              alt={company.name} 
+              className="w-3 h-3 rounded-full object-cover" 
+            />
+            <span>{company.name}</span>
+          </div>
+        ),
+        size: 280,
+        maxSize: 280,
+        cell: ({ getValue, row }) => {
+          const isLoading = loadingStates[row.original.id]?.[company.id];
+          const value = String(getValue() || getRandomRiskText());
+          return (
+            <div
+              className={`transition-opacity duration-200 overflow-y-auto ${
+                isLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              style={{ 
+                maxHeight: '120px',
+                wordBreak: 'break-word',
+                whiteSpace: 'normal',
+                lineHeight: '1.4'
+              }}
+            >
+              {value}
             </div>
-          ),
-          size: 280,
-          maxSize: 280,
-          cell: ({ getValue, row }) => {
-            const isLoading = loadingStates[row.original.id]?.[company.id];
-            const value = getValue() || getRandomRiskText();
-            return (
-              <div
-                className={`transition-opacity duration-200 overflow-y-auto ${
-                  isLoading ? 'opacity-0' : 'opacity-100'
-                }`}
-                style={{ 
-                  maxHeight: '120px',
-                  wordBreak: 'break-word',
-                  whiteSpace: 'normal',
-                  lineHeight: '1.4'
-                }}
-              >
-                {value}
-              </div>
-            );
-          },
-        })
-      );
+          );
+        },
+      });
     });
 
     return baseColumns;
