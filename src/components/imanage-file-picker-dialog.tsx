@@ -4,7 +4,10 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  DialogPortal,
+  DialogOverlay,
 } from "@/components/ui/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,6 +37,7 @@ interface iManageFilePickerDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onFilesSelected?: (files: iManageFile[]) => void;
+  overlayClassName?: string;
 }
 
 // Helper function to get file icon based on extension
@@ -127,17 +131,24 @@ const mockFiles: iManageFile[] = [
   { id: '8', name: 'Contract_Draft_v3.docx', type: 'file', modifiedDate: '2024-01-14', size: '2.3 MB', path: 'My Matters/Acme Corporation/Contracts' },
   { id: '9', name: 'Due_Diligence_Report.pdf', type: 'file', modifiedDate: '2024-01-12', size: '5.1 MB', path: 'My Matters/GlobalTech Inc/Due Diligence' },
   { id: '10', name: 'Meeting_Notes_Jan.docx', type: 'file', modifiedDate: '2024-01-08', size: '345 KB', path: 'My Matters/Acme Corporation/Notes' },
-  { id: '11', name: 'Settlement_Agreement_Final.pdf', type: 'file', modifiedDate: '2024-01-07', size: '1.8 MB', path: 'My Matters/Litigation/Settlements' },
-  { id: '12', name: 'Patent_Application_2024.pdf', type: 'file', modifiedDate: '2024-01-06', size: '4.2 MB', path: 'My Matters/GlobalTech Inc/Patents' },
-  { id: '13', name: 'Board_Resolution_Q1.docx', type: 'file', modifiedDate: '2024-01-05', size: '567 KB', path: 'My Matters/Acme Corporation/Corporate' },
-  { id: '14', name: 'Compliance_Review_2024.xlsx', type: 'file', modifiedDate: '2024-01-04', size: '890 KB', path: 'My Matters/Compliance' },
-  { id: '15', name: 'Merger_Agreement_Draft.pdf', type: 'file', modifiedDate: '2024-01-03', size: '3.2 MB', path: 'My Matters/M&A/Unicorn Capital' }
+  { id: '11', name: 'ValarAI_Series_F_Financing.pdf', type: 'file', modifiedDate: '2024-11-28', size: '4.8 MB', path: 'My Matters/ValarAI/Financing' },
+  { id: '17', name: 'ValarAI_Business_Plan_2024.pdf', type: 'file', modifiedDate: '2024-11-25', size: '3.2 MB', path: 'My Matters/ValarAI/Strategic' },
+  { id: '18', name: 'ValarAI_Financial_Statements_Q3_2024.xlsx', type: 'file', modifiedDate: '2024-11-20', size: '2.1 MB', path: 'My Matters/ValarAI/Financials' },
+  { id: '19', name: 'ValarAI_Competitive_Analysis.docx', type: 'file', modifiedDate: '2024-11-15', size: '1.7 MB', path: 'My Matters/ValarAI/Strategic' },
+  { id: '20', name: 'ValarAI_Technology_Risk_Assessment.pdf', type: 'file', modifiedDate: '2024-11-10', size: '2.4 MB', path: 'My Matters/ValarAI/Risk' },
+  { id: '21', name: 'ValarAI_Regulatory_Compliance_Review.pdf', type: 'file', modifiedDate: '2024-11-05', size: '1.9 MB', path: 'My Matters/ValarAI/Compliance' },
+  { id: '12', name: 'Settlement_Agreement_Final.pdf', type: 'file', modifiedDate: '2024-01-07', size: '1.8 MB', path: 'My Matters/Litigation/Settlements' },
+  { id: '13', name: 'Patent_Application_2024.pdf', type: 'file', modifiedDate: '2024-01-06', size: '4.2 MB', path: 'My Matters/GlobalTech Inc/Patents' },
+  { id: '14', name: 'Board_Resolution_Q1.docx', type: 'file', modifiedDate: '2024-01-05', size: '567 KB', path: 'My Matters/Acme Corporation/Corporate' },
+  { id: '15', name: 'Compliance_Review_2024.xlsx', type: 'file', modifiedDate: '2024-01-04', size: '890 KB', path: 'My Matters/Compliance' },
+  { id: '16', name: 'Merger_Agreement_Draft.pdf', type: 'file', modifiedDate: '2024-01-03', size: '3.2 MB', path: 'My Matters/M&A/Unicorn Capital' }
 ];
 
 export default function IManageFilePickerDialog({ 
   isOpen, 
   onClose, 
-  onFilesSelected 
+  onFilesSelected,
+  overlayClassName 
 }: iManageFilePickerDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [rowSelection, setRowSelection] = useState({});
@@ -200,10 +211,9 @@ export default function IManageFilePickerDialog({
     onClose();
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[800px] max-w-[800px] h-[600px] p-0 gap-0 overflow-hidden flex flex-col">
-        <DialogTitle className="sr-only">Select Files from iManage</DialogTitle>
+  const dialogContent = (
+    <>
+      <DialogTitle className="sr-only">Select Files from iManage</DialogTitle>
         {/* Loading Splash Screen */}
         <AnimatePresence>
           {isLoading && (
@@ -445,7 +455,25 @@ export default function IManageFilePickerDialog({
             </div>
           </div>
         )}
-      </DialogContent>
+    </>
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      {overlayClassName ? (
+        <DialogPortal>
+          <DialogOverlay className={overlayClassName} />
+          <DialogPrimitive.Content
+            className="fixed left-[50%] top-[50%] z-50 w-[800px] max-w-[800px] h-[600px] translate-x-[-50%] translate-y-[-50%] border border-neutral-200 bg-white duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg p-0 gap-0 overflow-hidden flex flex-col"
+          >
+            {dialogContent}
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      ) : (
+        <DialogContent className="w-[800px] max-w-[800px] h-[600px] p-0 gap-0 overflow-hidden flex flex-col">
+          {dialogContent}
+        </DialogContent>
+      )}
     </Dialog>
   );
 }

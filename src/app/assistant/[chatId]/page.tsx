@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, CloudUpload, FileSearch, LoaderCircle, FilePen } from "lucide-react";
+import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, CloudUpload, FileSearch, LoaderCircle, FilePen, FileSpreadsheet } from "lucide-react";
 import SourcesDrawer from "@/components/sources-drawer";
 import ShareThreadDialog from "@/components/share-thread-dialog";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
@@ -22,6 +22,7 @@ import ArtifactCard from "@/components/artifact-card";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import DraftArtifactPanel from "@/components/draft-artifact-panel";
+import ReviewTablePanel from "@/components/review-table-panel";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -29,6 +30,7 @@ import { Spinner } from "@/components/ui/spinner";
 import FileManagementDialog from "@/components/file-management-dialog";
 import ThinkingState from "@/components/thinking-state";
 import IManageFilePickerDialog from "@/components/imanage-file-picker-dialog";
+import PrecedentCompaniesTable from "@/components/precedent-companies-table";
 
 type Message = {
   role: 'user' | 'assistant';
@@ -77,6 +79,54 @@ type Message = {
     showSummary?: boolean;
     visibleBullets?: number;
   };
+  showEdgarReview?: boolean;
+  edgarReviewContent?: {
+    summary: string;
+    filings: Array<{
+      company: string;
+      date: string;
+      type: string;
+    }>;
+    totalFilings: number;
+  };
+  edgarReviewLoadingState?: {
+    isLoading: boolean;
+    loadedFilings: number;
+  };
+  edgarReviewCompleteMessage?: string;
+  precedentCompaniesData?: Array<{
+    id: string;
+    company: string;
+    ticker: string;
+    tier: string;
+    tierColor: string;
+    similarity: number;
+    industry: string;
+    revenueAtIPO: string;
+    dateOfFiling: string;
+    issuersCounsel: string;
+    uwCounsel: string;
+    class: string;
+    selected: boolean;
+  }>;
+  showTimeWindowThinking?: boolean;
+  timeWindowThinkingState?: {
+    isLoading: boolean;
+    showSummary?: boolean;
+    visibleBullets?: number;
+  };
+  timeWindowMessage?: string;
+  showReviewTableGeneration?: boolean;
+  reviewTableGenerationLoadingState?: {
+    isLoading: boolean;
+    showSummary?: boolean;
+    visibleBullets?: number;
+  };
+  reviewTableArtifactData?: {
+    title: string;
+    subtitle: string;
+  };
+  reviewTableMessage?: string;
 };
 
 // Shared animation configuration for consistency - refined timing
@@ -174,10 +224,12 @@ export default function AssistantChatPage({
   const [draftArtifactPanelOpen, setDraftArtifactPanelOpen] = useState(false);
   const [selectedArtifact, setSelectedArtifact] = useState<{ title: string; subtitle: string } | null>(null);
   const [selectedDraftArtifact, setSelectedDraftArtifact] = useState<{ title: string; subtitle: string } | null>(null);
+  const [reviewTablePanelOpen, setReviewTablePanelOpen] = useState(false);
+  const [selectedReviewTableArtifact, setSelectedReviewTableArtifact] = useState<{ title: string; subtitle: string } | null>(null);
   
   // New unified artifact panel state
   const [unifiedArtifactPanelOpen, setUnifiedArtifactPanelOpen] = useState(false);
-  const [currentArtifactType, setCurrentArtifactType] = useState<'draft' | null>(null);
+  const [currentArtifactType, setCurrentArtifactType] = useState<'draft' | 'review-table' | null>(null);
   const [isFileManagementOpen, setIsFileManagementOpen] = useState(false);
   const [isiManagePickerOpen, setIsiManagePickerOpen] = useState(false);
   
@@ -200,7 +252,7 @@ export default function AssistantChatPage({
   const hasAutoCollapsedSidebarRef = useRef(false);
   
   // Check if any artifact panel is open
-  const anyArtifactPanelOpen = artifactPanelOpen || draftArtifactPanelOpen || unifiedArtifactPanelOpen;
+  const anyArtifactPanelOpen = artifactPanelOpen || draftArtifactPanelOpen || reviewTablePanelOpen || unifiedArtifactPanelOpen;
   
   // Check if we're coming from the assistant homepage
   const [isFromHomepage] = useState(() => {
@@ -229,8 +281,6 @@ export default function AssistantChatPage({
   // Track if animations have already been played to prevent replaying on chat panel toggle
   const hasPlayedAnimationsRef = useRef(false);
 
-  // Track if source drawer has been opened once during the session
-  const hasOpenedSourcesDrawerRef = useRef(false);
 
   // Add states for editing titles
   const [isEditingChatTitle, setIsEditingChatTitle] = useState(false);
@@ -242,11 +292,15 @@ export default function AssistantChatPage({
   const [isEditingDraftArtifactTitle, setIsEditingDraftArtifactTitle] = useState(false);
   const [editedDraftArtifactTitle, setEditedDraftArtifactTitle] = useState(selectedDraftArtifact?.title || '');
   
+  const [isEditingReviewTableArtifactTitle, setIsEditingReviewTableArtifactTitle] = useState(false);
+  const [editedReviewTableArtifactTitle, setEditedReviewTableArtifactTitle] = useState(selectedReviewTableArtifact?.title || '');
+  
 
   
   const chatTitleInputRef = useRef<HTMLInputElement>(null);
   const artifactTitleInputRef = useRef<HTMLInputElement>(null);
   const draftArtifactTitleInputRef = useRef<HTMLInputElement>(null);
+  const reviewTableArtifactTitleInputRef = useRef<HTMLInputElement>(null);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -475,6 +529,40 @@ export default function AssistantChatPage({
     setIsEditingDraftArtifactTitle(false);
   }, [editedDraftArtifactTitle, selectedDraftArtifact]);
 
+  // Handle saving review table artifact title
+  const handleSaveReviewTableArtifactTitle = useCallback(() => {
+    if (editedReviewTableArtifactTitle.trim() && selectedReviewTableArtifact) {
+      if (editedReviewTableArtifactTitle !== selectedReviewTableArtifact.title) {
+        // Update the selected review table artifact
+        setSelectedReviewTableArtifact({
+          ...selectedReviewTableArtifact,
+          title: editedReviewTableArtifactTitle
+        });
+        
+        // Also update the title in the messages array
+        setMessages(prevMessages => 
+          prevMessages.map(msg => {
+            if (msg.reviewTableArtifactData && msg.reviewTableArtifactData.title === selectedReviewTableArtifact.title) {
+              return {
+                ...msg,
+                reviewTableArtifactData: {
+                  ...msg.reviewTableArtifactData,
+                  title: editedReviewTableArtifactTitle
+                }
+              };
+            }
+            return msg;
+          })
+        );
+        
+        toast.success("Review table title updated");
+      }
+    } else if (selectedReviewTableArtifact) {
+      setEditedReviewTableArtifactTitle(selectedReviewTableArtifact.title);
+    }
+    setIsEditingReviewTableArtifactTitle(false);
+  }, [editedReviewTableArtifactTitle, selectedReviewTableArtifact]);
+
 
 
   // Handle clicking outside of input fields
@@ -489,16 +577,19 @@ export default function AssistantChatPage({
       if (draftArtifactTitleInputRef.current && !draftArtifactTitleInputRef.current.contains(event.target as Node)) {
         handleSaveDraftArtifactTitle();
       }
+      if (reviewTableArtifactTitleInputRef.current && !reviewTableArtifactTitleInputRef.current.contains(event.target as Node)) {
+        handleSaveReviewTableArtifactTitle();
+      }
 
     };
 
-    if (isEditingChatTitle || isEditingArtifactTitle || isEditingDraftArtifactTitle) {
+    if (isEditingChatTitle || isEditingArtifactTitle || isEditingDraftArtifactTitle || isEditingReviewTableArtifactTitle) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [isEditingChatTitle, isEditingArtifactTitle, isEditingDraftArtifactTitle, editedChatTitle, editedArtifactTitle, editedDraftArtifactTitle, handleSaveChatTitle, handleSaveArtifactTitle, handleSaveDraftArtifactTitle]);
+  }, [isEditingChatTitle, isEditingArtifactTitle, isEditingDraftArtifactTitle, isEditingReviewTableArtifactTitle, editedChatTitle, editedArtifactTitle, editedDraftArtifactTitle, editedReviewTableArtifactTitle, handleSaveChatTitle, handleSaveArtifactTitle, handleSaveDraftArtifactTitle, handleSaveReviewTableArtifactTitle]);
 
   // Auto-collapse sidebar when artifact panel opens
   // Note: This is a one-time auto-collapse for space optimization.
@@ -546,9 +637,11 @@ export default function AssistantChatPage({
       requestAnimationFrame(() => {
         setArtifactPanelOpen(false);
         setDraftArtifactPanelOpen(false);
+        setReviewTablePanelOpen(false);
         setUnifiedArtifactPanelOpen(false);
         setSelectedArtifact(null);
         setSelectedDraftArtifact(null);
+        setSelectedReviewTableArtifact(null);
         setCurrentArtifactType(null);
         setShouldTriggerExpand(false);
       });
@@ -584,7 +677,9 @@ export default function AssistantChatPage({
         if (idx === 0 && msg.role === 'assistant' && msg.isLoading) {
           let content = '';
           
-          if (workflowTitle.toLowerCase().includes('s-1')) {
+          if (workflowTitle.toLowerCase().includes('s-1') && workflowTitle.toLowerCase().includes('risk factors')) {
+            content = "Let's draft comprehensive risk factors for your S-1 filing. To create accurate and company-specific risk factors, I'll need supporting materials that highlight your business operations, financial position, industry challenges, and regulatory environment. This includes financials, business plans, competitor analyses, and any existing risk assessments. How would you like to upload your supporting documents?";
+          } else if (workflowTitle.toLowerCase().includes('s-1')) {
             content = "Let's get going on drafting your S-1. Before we get started, I'll need some supporting materials (charters, financials, press releases, prior filings). I'll also need key deal details like offering type, structure, and use of proceeds. After I have all the information, I can generate a draft S-1 shell that you can edit in draft mode. First things first, how would you like to upload your supporting documents?";
           } else {
             content = `I'll help you with "${workflowTitle}". What specific information or documents would you like me to work with?`;
@@ -622,13 +717,7 @@ export default function AssistantChatPage({
       const artifactType = detectArtifactType(userMessage);
       const isDraftArtifact = artifactType === 'draft';
       
-      // Open sources drawer only on the first message if not already opened
-      if (!sourcesDrawerOpen && !hasOpenedSourcesDrawerRef.current) {
-        setTimeout(() => {
-          setSourcesDrawerOpen(true);
-          hasOpenedSourcesDrawerRef.current = true;
-        }, 1000); // Open drawer during AI thinking time
-      }
+      // Sources drawer is now only opened manually by the user
       
       // Get the thinking content for the appropriate variant
       const variant = isDraftArtifact ? 'draft' : 'analysis';
@@ -705,6 +794,122 @@ export default function AssistantChatPage({
       
       // Simulate AI response after thinking states complete
       setTimeout(() => {
+        // Check if this is a Risk Factors workflow response to time window question
+        const workflowMsg = messages.find(m => m.isWorkflowResponse && m.workflowTitle);
+        const isRiskFactorsWorkflow = workflowMsg?.workflowTitle?.toLowerCase().includes('risk factors');
+        const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+        const isTimeWindowResponse = lastAssistantMsg?.timeWindowMessage?.includes('five-year lookback');
+        
+        if (isRiskFactorsWorkflow && isTimeWindowResponse) {
+          // This is a response to the time window question in Risk Factors workflow
+          // First complete the current thinking state
+          setMessages(prev => prev.map((msg, idx) => {
+            if (idx === prev.length - 1 && msg.role === 'assistant' && msg.isLoading) {
+              return {
+                ...msg,
+                content: "Perfect! I'll use a five-year lookback period to ensure we capture comprehensive precedent data. Now let me pull and analyze relevant S-1 filings to identify industry-standard risk factors.",
+                isLoading: false,
+                loadingState: undefined
+              };
+            }
+            return msg;
+          }));
+          
+          // Add EDGAR review after a delay
+          setTimeout(() => {
+            const edgarFilings = [
+              { company: "CrowdStrike", date: "091820", type: "S-1" },
+              { company: "Snowflake", date: "082420", type: "S-1" },
+              { company: "Unity Software", date: "081720", type: "S-1" },
+              { company: "Palantir", date: "082520", type: "S-1" },
+              { company: "Asana", date: "082420", type: "S-1" },
+              { company: "JFrog", date: "090820", type: "S-1" }
+            ];
+
+            setMessages(prev => {
+              const updatedMessages = [...prev];
+              const lastMsg = updatedMessages[updatedMessages.length - 1];
+              if (lastMsg && lastMsg.role === 'assistant') {
+                updatedMessages[updatedMessages.length - 1] = {
+                  ...lastMsg,
+                  showEdgarReview: true,
+                  edgarReviewContent: {
+                    summary: "I will analyze recent S-1 filings from technology companies to identify common risk factors and industry-specific disclosures.",
+                    filings: edgarFilings,
+                    totalFilings: edgarFilings.length
+                  },
+                  edgarReviewLoadingState: {
+                    isLoading: true,
+                    loadedFilings: 0
+                  }
+                };
+              }
+              return updatedMessages;
+            });
+            
+            // Simulate EDGAR review progress
+            let loadedCount = 0;
+            const progressInterval = setInterval(() => {
+              loadedCount++;
+              setMessages(prev => prev.map((msg, idx) => {
+                if (idx === prev.length - 1 && msg.role === 'assistant' && msg.edgarReviewLoadingState) {
+                  return {
+                    ...msg,
+                    edgarReviewLoadingState: {
+                      ...msg.edgarReviewLoadingState,
+                      loadedFilings: loadedCount
+                    }
+                  };
+                }
+                return msg;
+              }));
+              
+              if (loadedCount >= 6) {
+                clearInterval(progressInterval);
+                
+                // Complete EDGAR review and show final message
+                setTimeout(() => {
+                  setMessages(prev => prev.map((msg, idx) => {
+                    if (idx === prev.length - 1 && msg.role === 'assistant') {
+                      return {
+                        ...msg,
+                        edgarReviewLoadingState: {
+                          isLoading: false,
+                          loadedFilings: 6
+                        },
+                        edgarReviewCompleteMessage: "I've identified and compiled the 15 most relevant precedent IPO S-1s into a review table. I recommend selecting at least 3-7 companies from this table to include in the Risk Factor Matrix, which will serve as the basis for drafting the Risk Factor section.",
+                        precedentCompaniesData: [
+                          { id: '1', company: 'CrowdStrike Holdings', ticker: 'CRWD', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Cybersecurity', revenueAtIPO: '$249M', dateOfFiling: '2019-05-06', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'Davis Polk', class: 'Single', selected: true },
+                          { id: '2', company: 'Okta Inc.', ticker: 'OKTA', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Identity Management', revenueAtIPO: '$92M', dateOfFiling: '2017-03-17', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Goodwin Procter', class: 'Double', selected: true },
+                          { id: '3', company: 'SentinelOne', ticker: 'S', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Endpoint Security', revenueAtIPO: '$176M', dateOfFiling: '2021-06-08', issuersCounsel: 'Fenwick & West', uwCounsel: 'Cooley LLP', class: 'Single', selected: true },
+                          { id: '4', company: 'Snowflake Inc.', ticker: 'SNOW', tier: 'Tier 2', tierColor: 'yellow', similarity: 80, industry: 'Data Platform', revenueAtIPO: '$264M', dateOfFiling: '2020-08-24', issuersCounsel: 'Cooley LLP', uwCounsel: 'Simpson Thacher', class: 'Double', selected: false },
+                          { id: '5', company: 'Cloudflare Inc', ticker: 'NET', tier: 'Tier 2', tierColor: 'yellow', similarity: 80, industry: 'Web Security', revenueAtIPO: '$387M', dateOfFiling: '2019-08-15', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Fenwick & West', class: 'Single', selected: false },
+                          { id: '6', company: 'Datadog Inc.', ticker: 'DDOG', tier: 'Tier 1', tierColor: 'blue', similarity: 85, industry: 'Monitoring Platform', revenueAtIPO: '$198M', dateOfFiling: '2019-08-20', issuersCounsel: 'Orrick Herrington', uwCounsel: 'Davis Polk', class: 'Double', selected: false },
+                          { id: '7', company: 'Zscaler Inc.', ticker: 'ZS', tier: 'Tier 1', tierColor: 'blue', similarity: 88, industry: 'Cloud Security', revenueAtIPO: '$127M', dateOfFiling: '2018-02-16', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'White & Case', class: 'Single', selected: false },
+                          { id: '8', company: 'Elastic N.V.', ticker: 'ESTC', tier: 'Tier 2', tierColor: 'yellow', similarity: 75, industry: 'Search & Analytics', revenueAtIPO: '$160M', dateOfFiling: '2018-08-31', issuersCounsel: 'Shearman & Sterling', uwCounsel: 'Latham & Watkins', class: 'Single', selected: false },
+                          { id: '9', company: 'MongoDB Inc.', ticker: 'MDB', tier: 'Tier 2', tierColor: 'yellow', similarity: 78, industry: 'Database Platform', revenueAtIPO: '$101M', dateOfFiling: '2017-09-21', issuersCounsel: 'Cooley LLP', uwCounsel: 'Wilson Sonsini', class: 'Double', selected: false },
+                          { id: '10', company: 'HashiCorp Inc.', ticker: 'HCP', tier: 'Tier 2', tierColor: 'yellow', similarity: 76, industry: 'Infrastructure Automation', revenueAtIPO: '$211M', dateOfFiling: '2021-11-04', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Fenwick & West', class: 'Single', selected: false },
+                          { id: '11', company: 'UiPath Inc.', ticker: 'PATH', tier: 'Tier 2', tierColor: 'yellow', similarity: 72, industry: 'Robotic Process Automation', revenueAtIPO: '$607M', dateOfFiling: '2021-03-26', issuersCounsel: 'Skadden Arps', uwCounsel: 'Sullivan & Cromwell', class: 'Double', selected: false },
+                          { id: '12', company: 'Confluent Inc.', ticker: 'CFLT', tier: 'Tier 2', tierColor: 'yellow', similarity: 74, industry: 'Data Streaming', revenueAtIPO: '$237M', dateOfFiling: '2021-05-19', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'Simpson Thacher', class: 'Single', selected: false },
+                          { id: '13', company: 'GitLab Inc.', ticker: 'GTLB', tier: 'Tier 2', tierColor: 'yellow', similarity: 73, industry: 'DevOps Platform', revenueAtIPO: '$152M', dateOfFiling: '2021-09-17', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Davis Polk', class: 'Single', selected: false },
+                          { id: '14', company: 'Palantir Technologies', ticker: 'PLTR', tier: 'Tier 1', tierColor: 'blue', similarity: 82, industry: 'Data Analytics', revenueAtIPO: '$743M', dateOfFiling: '2020-08-25', issuersCounsel: 'Weil Gotshal', uwCounsel: 'Cravath Swaine', class: 'Double', selected: false },
+                          { id: '15', company: 'Unity Software Inc.', ticker: 'U', tier: 'Tier 2', tierColor: 'yellow', similarity: 70, industry: 'Game Development Platform', revenueAtIPO: '$542M', dateOfFiling: '2020-08-24', issuersCounsel: 'Cooley LLP', uwCounsel: 'Wilson Sonsini', class: 'Single', selected: false },
+                        ]
+                      };
+                    }
+                    return msg;
+                  }));
+                  setIsLoading(false);
+                  scrollToBottom();
+                }, 500);
+              }
+            }, 400);
+          }, 800); // Small delay before showing EDGAR review
+          
+          return; // Exit early, we handled this case
+        }
+        
+        // Original logic for other cases
         // Update the assistant message with actual content and remove loading state
         setMessages(prev => prev.map((msg, idx) => {
           if (idx === prev.length - 1 && msg.role === 'assistant' && msg.isLoading) {
@@ -724,7 +929,7 @@ export default function AssistantChatPage({
         scrollToBottom();
       }, 4000); // Adjusted to 4 seconds to account for smoother animation timing
     }
-  }, [inputValue, isLoading, sourcesDrawerOpen, hasOpenedSourcesDrawerRef, scrollToBottom]);
+  }, [inputValue, isLoading, scrollToBottom, messages]);
   
   // Process initial message when component mounts
   useEffect(() => {
@@ -1135,6 +1340,7 @@ export default function AssistantChatPage({
                         {!message.isLoading && message.content && (
                           <AnimatePresence>
                             <motion.div
+                              key="message-content"
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.4, ease: "easeOut" }}
@@ -1234,6 +1440,7 @@ export default function AssistantChatPage({
                         {message.showFileReview && message.fileReviewContent && (
                           <AnimatePresence>
                             <motion.div 
+                              key="file-review-content"
                               className="mt-3"
                               
                               initial={{ opacity: 0, y: 10 }}
@@ -1312,20 +1519,207 @@ export default function AssistantChatPage({
                         {message.fileReviewLoadingState && !message.fileReviewLoadingState.isLoading && message.showFileReview && (
                           <AnimatePresence>
                             <motion.div 
+                              key="file-review-complete-message"
                               className="mt-1 text-neutral-900 leading-relaxed pl-2"
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.4, ease: "easeOut" }}
                             >
-                              Perfect, I&apos;ve reviewed all the files that you&apos;ve provided. I&apos;ve managed to already identify key information that will be essential for drafting your S-1 registration statement, including business operations, financial data, risk factors, and material agreements. I&apos;ll help you generate a draft of the S-1 shell.
+                              {(() => {
+                                // Check if this is a Risk Factors workflow by looking at all messages
+                                const workflowMsg = messages.find(m => m.isWorkflowResponse && m.workflowTitle);
+                                const isRiskFactorsWorkflow = workflowMsg?.workflowTitle?.toLowerCase().includes('risk factors');
+                                console.log('Workflow check:', { workflowMsg, isRiskFactorsWorkflow, messageWorkflowTitle: message.workflowTitle });
+                                
+                                return isRiskFactorsWorkflow 
+                                  ? "I've received your description of [issuer name] and have a clear understanding of its business profile. Before I pull the proposed precedent set, I'll need a couple of preferences from you. Let's start with the counsel filter, should I limit the search to precedents where Latham & Watkins served as issuer's counsel, or not limit by law firm at all?"
+                                  : "Perfect, I've reviewed all the files that you've provided. I've managed to already identify key information that will be essential for drafting your S-1 registration statement, including business operations, financial data, risk factors, and material agreements. I'll help you generate a draft of the S-1 shell.";
+                              })()}
                             </motion.div>
+                            
+                            {/* Counsel filter buttons for Risk Factors workflow */}
+                            {(() => {
+                              const workflowMsg = messages.find(m => m.isWorkflowResponse && m.workflowTitle);
+                              const isRiskFactorsWorkflow = workflowMsg?.workflowTitle?.toLowerCase().includes('risk factors');
+                              return isRiskFactorsWorkflow;
+                            })() && (
+                              <motion.div 
+                                className="mt-3 flex gap-2 pl-2"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+                              >
+                                <button 
+                                  className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
+                                  onClick={() => {
+                                    // Handle Latham & Watkins filter selection
+                                    console.log('Selected: Latham & Watkins only');
+                                    
+                                    // First show time window thinking state
+                                    setMessages(prev => prev.map((msg, idx) => {
+                                      if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                        return {
+                                          ...msg,
+                                          showTimeWindowThinking: true,
+                                          timeWindowThinkingState: {
+                                            isLoading: true,
+                                            showSummary: false,
+                                            visibleBullets: 0
+                                          }
+                                        };
+                                      }
+                                      return msg;
+                                    }));
+                                    
+                                    // Simulate thinking state progress
+                                    setTimeout(() => {
+                                      setMessages(prev => prev.map((msg, idx) => {
+                                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                          return {
+                                            ...msg,
+                                            timeWindowThinkingState: {
+                                              isLoading: true,
+                                              showSummary: true,
+                                              visibleBullets: 0
+                                            }
+                                          };
+                                        }
+                                        return msg;
+                                      }));
+                                    }, 600);
+                                    
+                                    // Show bullets progressively
+                                    const bullets = ['Analyzing date ranges for precedent S-1 filings', 'Filtering by Latham & Watkins as issuer counsel', 'Preparing to pull relevant risk factor sections'];
+                                    bullets.forEach((_, bulletIdx) => {
+                                      setTimeout(() => {
+                                        setMessages(prev => prev.map((msg, idx) => {
+                                          if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                            return {
+                                              ...msg,
+                                              timeWindowThinkingState: {
+                                                isLoading: true,
+                                                showSummary: true,
+                                                visibleBullets: bulletIdx + 1
+                                              }
+                                            };
+                                          }
+                                          return msg;
+                                        }));
+                                      }, 1200 + (bulletIdx * 400));
+                                    });
+                                    
+                                    // Complete thinking state and show message
+                                    setTimeout(() => {
+                                      setMessages(prev => prev.map((msg, idx) => {
+                                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                          return {
+                                            ...msg,
+                                            timeWindowThinkingState: {
+                                              isLoading: false,
+                                              showSummary: true,
+                                              visibleBullets: 3
+                                            },
+                                            timeWindowMessage: "Do you want me to default to a five-year lookback, or would you prefer a narrower or broader time window for pulling S-1 filings? Once you confirm, I can refine the precedent universe accordingly and move forward with tagging and scoring risk factors."
+                                          };
+                                        }
+                                        return msg;
+                                      }));
+                                    }, 2800);
+                                  }}
+                                >
+                                  <span className="text-neutral-900 text-sm font-medium">Latham & Watkins only</span>
+                                </button>
+                                
+                                <button 
+                                  className="py-1.5 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors flex items-center gap-1.5"
+                                  onClick={() => {
+                                    // Handle no filter selection
+                                    console.log('Selected: No filter');
+                                    
+                                    // First show time window thinking state
+                                    setMessages(prev => prev.map((msg, idx) => {
+                                      if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                        return {
+                                          ...msg,
+                                          showTimeWindowThinking: true,
+                                          timeWindowThinkingState: {
+                                            isLoading: true,
+                                            showSummary: false,
+                                            visibleBullets: 0
+                                          }
+                                        };
+                                      }
+                                      return msg;
+                                    }));
+                                    
+                                    // Simulate thinking state progress
+                                    setTimeout(() => {
+                                      setMessages(prev => prev.map((msg, idx) => {
+                                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                          return {
+                                            ...msg,
+                                            timeWindowThinkingState: {
+                                              isLoading: true,
+                                              showSummary: true,
+                                              visibleBullets: 0
+                                            }
+                                          };
+                                        }
+                                        return msg;
+                                      }));
+                                    }, 600);
+                                    
+                                    // Show bullets progressively
+                                    const bullets = ['Analyzing date ranges for precedent S-1 filings', 'Searching across all law firms', 'Preparing to pull relevant risk factor sections'];
+                                    bullets.forEach((_, bulletIdx) => {
+                                      setTimeout(() => {
+                                        setMessages(prev => prev.map((msg, idx) => {
+                                          if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                            return {
+                                              ...msg,
+                                              timeWindowThinkingState: {
+                                                isLoading: true,
+                                                showSummary: true,
+                                                visibleBullets: bulletIdx + 1
+                                              }
+                                            };
+                                          }
+                                          return msg;
+                                        }));
+                                      }, 1200 + (bulletIdx * 400));
+                                    });
+                                    
+                                    // Complete thinking state and show message
+                                    setTimeout(() => {
+                                      setMessages(prev => prev.map((msg, idx) => {
+                                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                                          return {
+                                            ...msg,
+                                            timeWindowThinkingState: {
+                                              isLoading: false,
+                                              showSummary: true,
+                                              visibleBullets: 3
+                                            },
+                                            timeWindowMessage: "Do you want me to default to a five-year lookback, or would you prefer a narrower or broader time window for pulling S-1 filings? Once you confirm, I can refine the precedent universe accordingly and move forward with tagging and scoring risk factors."
+                                          };
+                                        }
+                                        return msg;
+                                      }));
+                                    }, 2800);
+                                  }}
+                                >
+                                  <span className="text-neutral-900 text-sm font-medium">No filter</span>
+                                </button>
+                              </motion.div>
+                            )}
                           </AnimatePresence>
                         )}
                         
-                        {/* Draft Generation Thinking State */}
+                        {/* Draft Generation Thinking State - for S-1 Shell workflow */}
                         {message.showDraftGeneration && (
                           <AnimatePresence>
                             <motion.div 
+                              key="draft-generation"
                               className="mt-3.5"
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
@@ -1381,6 +1775,296 @@ export default function AssistantChatPage({
                           </AnimatePresence>
                         )}
                         
+                        {/* Time Window Thinking State - for Risk Factors workflow */}
+                        {message.showTimeWindowThinking && (
+                          <AnimatePresence>
+                            <motion.div 
+                              key="time-window-thinking"
+                              className="mt-3.5"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            >
+                              <ThinkingState
+                                variant="analysis"
+                                title={message.timeWindowThinkingState?.isLoading ? "Thinking..." : "Thought"}
+                                durationSeconds={message.timeWindowThinkingState?.isLoading ? undefined : 2}
+                                summary={message.timeWindowThinkingState?.showSummary ? "Determining optimal time window for precedent analysis to ensure comprehensive risk factor coverage." : undefined}
+                                bullets={message.timeWindowThinkingState?.isLoading ? 
+                                  ['Analyzing date ranges for precedent S-1 filings', 'Filtering by counsel preferences', 'Preparing to pull relevant risk factor sections'].slice(0, message.timeWindowThinkingState?.visibleBullets || 0)
+                                  : ['Analyzing date ranges for precedent S-1 filings', 'Filtering by counsel preferences', 'Preparing to pull relevant risk factor sections']
+                                }
+                                defaultOpen={false}
+                                isLoading={message.timeWindowThinkingState?.isLoading}
+                              />
+                              
+                              {/* Show message after thinking completes */}
+                              {message.timeWindowMessage && (
+                                <motion.div 
+                                  className="mt-1 text-neutral-900 leading-relaxed pl-2"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+                                >
+                                  {message.timeWindowMessage}
+                                </motion.div>
+                              )}
+                            </motion.div>
+                          </AnimatePresence>
+                        )}
+                        
+                        {/* EDGAR Review Thinking State - for Risk Factors workflow */}
+                        {message.showEdgarReview && message.edgarReviewContent && (
+                          <AnimatePresence>
+                            <motion.div 
+                              key="edgar-review"
+                              className="mt-3.5"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, ease: "easeOut" }}
+                            >
+                              <ThinkingState
+                                variant="analysis"
+                                title={message.edgarReviewLoadingState?.isLoading ? "Reviewing EDGAR filings..." : "Reviewed EDGAR filings"}
+                                durationSeconds={undefined}
+                                summary={message.edgarReviewContent.summary}
+                                customContent={
+                                  <motion.div 
+                                    className="mt-3"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3, ease: "easeOut" }}
+                                  >
+                                    <div className="flex flex-wrap gap-2">
+                                      {message.edgarReviewContent.filings.map((filing, idx) => (
+                                        <motion.div
+                                          key={`filing-chip-${idx}`}
+                                          initial={{ opacity: 0, y: 4 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ 
+                                            duration: 0.2, 
+                                            ease: "easeOut",
+                                            delay: Math.floor(idx / 3) * 0.1 // Animate by rows (assuming ~3 chips per row)
+                                          }}
+                                          className="inline-flex items-center gap-1.5 px-2 py-1.5 border border-neutral-200 rounded-md text-xs"
+                                        >
+                                          <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                                            {message.edgarReviewLoadingState?.isLoading && idx >= (message.edgarReviewLoadingState?.loadedFilings || 0) ? (
+                                              <LoaderCircle className="w-4 h-4 animate-spin text-neutral-600" />
+                                            ) : (
+                                              <Image src="/SEC-logo.svg" alt="SEC" width={16} height={16} />
+                                            )}
+                                          </div>
+                                          <span className="text-neutral-700 truncate max-w-[200px]">
+                                            {filing.company} ({filing.date}) ({filing.type})
+                                          </span>
+                                        </motion.div>
+                                      ))}
+                                      {message.edgarReviewContent.totalFilings > message.edgarReviewContent.filings.length && (
+                                        <motion.button 
+                                          initial={{ opacity: 0, y: 4 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ 
+                                            duration: 0.2, 
+                                            ease: "easeOut",
+                                            delay: Math.floor(message.edgarReviewContent.filings.length / 3) * 0.1
+                                          }}
+                                          className="inline-flex items-center gap-1.5 px-2 py-1.5 text-xs text-neutral-600 hover:text-neutral-800 transition-colors"
+                                        >
+                                          View all
+                                        </motion.button>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                }
+                                defaultOpen={false}
+                                isLoading={message.edgarReviewLoadingState?.isLoading}
+                              />
+                              
+                              {/* Show text response after EDGAR review completes */}
+                              {!message.edgarReviewLoadingState?.isLoading && message.edgarReviewCompleteMessage && (
+                                <>
+                                  <motion.div 
+                                    className="mt-3 text-neutral-900 leading-relaxed pl-2"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+                                  >
+                                    {message.edgarReviewCompleteMessage}
+                                  </motion.div>
+                                  
+                                  {/* Precedent Companies Table */}
+                                  {message.precedentCompaniesData && (
+                                    <motion.div 
+                                      className="mt-4 pl-2"
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ duration: 0.4, ease: "easeOut", delay: 0.4 }}
+                                    >
+                                      <PrecedentCompaniesTable 
+                                        data={message.precedentCompaniesData}
+                                        onConfirm={(selectedCompanies) => {
+                                          console.log('Selected companies:', selectedCompanies);
+                                          
+                                          // Update the current message to show thinking state
+                                          setMessages(prev => prev.map((msg, idx) => {
+                                            if (idx === prev.length - 1 && msg.role === 'assistant' && msg.precedentCompaniesData) {
+                                              return {
+                                                ...msg,
+                                                showReviewTableGeneration: true,
+                                                reviewTableGenerationLoadingState: {
+                                                  isLoading: true,
+                                                  showSummary: false,
+                                                  visibleBullets: 0
+                                                }
+                                              };
+                                            }
+                                            return msg;
+                                          }));
+                                          
+                                          // Progressive reveal of review table generation content
+                                          // Show summary after 1 second
+                                          setTimeout(() => {
+                                            setMessages(prev => prev.map((msg, idx) => {
+                                              if (idx === prev.length - 1 && msg.role === 'assistant' && msg.reviewTableGenerationLoadingState?.isLoading) {
+                                                return {
+                                                  ...msg,
+                                                  reviewTableGenerationLoadingState: {
+                                                    ...msg.reviewTableGenerationLoadingState,
+                                                    showSummary: true
+                                                  }
+                                                };
+                                              }
+                                              return msg;
+                                            }));
+                                          }, 1000);
+                                          
+                                          // Show bullets progressively with longer delays
+                                          const reviewBullets = ['Analyzing selected precedent companies', 'Extracting risk factors from S-1 filings', 'Organizing by category and relevance'];
+                                          reviewBullets.forEach((_, bulletIdx) => {
+                                            setTimeout(() => {
+                                              setMessages(prev => prev.map((msg, idx) => {
+                                                if (idx === prev.length - 1 && msg.role === 'assistant' && msg.reviewTableGenerationLoadingState?.isLoading) {
+                                                  return {
+                                                    ...msg,
+                                                    reviewTableGenerationLoadingState: {
+                                                      ...msg.reviewTableGenerationLoadingState,
+                                                      visibleBullets: bulletIdx + 1
+                                                    }
+                                                  };
+                                                }
+                                                return msg;
+                                              }));
+                                            }, 1800 + (bulletIdx * 800));
+                                          });
+                                          
+                                          // Complete the generation and show the artifact
+                                          setTimeout(() => {
+                                            setMessages(prev => prev.map((msg, idx) => {
+                                              if (idx === prev.length - 1 && msg.role === 'assistant' && msg.precedentCompaniesData) {
+                                                return {
+                                                  ...msg,
+                                                  reviewTableGenerationLoadingState: {
+                                                    isLoading: false,
+                                                    showSummary: true,
+                                                    visibleBullets: reviewBullets.length
+                                                  },
+                                                  reviewTableArtifactData: {
+                                                    title: 'Risk Factor Review Table',
+                                                    subtitle: `${selectedCompanies.length} columns • 126 rows`
+                                                  },
+                                                  reviewTableMessage: 'I\'ve generated a comprehensive Risk Factor Review Table based on your selected precedent companies. This table compiles and organizes the relevant risk factors from each company\'s S-1 filing.'
+                                                };
+                                              }
+                                              return msg;
+                                            }));
+                                            
+                                            // Open the review table panel
+                                            const artifactData = {
+                                              title: 'Risk Factor Review Table',
+                                              subtitle: `${selectedCompanies.length} columns • 126 rows`
+                                            };
+                                            
+                                            setSelectedReviewTableArtifact(artifactData);
+                                            setCurrentArtifactType('review-table');
+                                            setUnifiedArtifactPanelOpen(true);
+                                            setReviewTablePanelOpen(true);
+                                          }, 5600);
+                                        }}
+                                      />
+                                    </motion.div>
+                                  )}
+                                  
+                                  {/* Review Table Generation Thinking State */}
+                                  {message.showReviewTableGeneration && (
+                                    <AnimatePresence>
+                                      <motion.div 
+                                        key="review-table-generation"
+                                        className="mt-3.5"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, ease: "easeOut" }}
+                                      >
+                                        <ThinkingState
+                                          variant="draft"
+                                          title={message.reviewTableGenerationLoadingState?.isLoading ? "Generating review table..." : "Generated review table"}
+                                          durationSeconds={undefined}
+                                          summary={message.reviewTableGenerationLoadingState?.showSummary || !message.reviewTableGenerationLoadingState?.isLoading ? 'I will use the user selections from the precedent review table to generate the Risk Factor Matrix.' : undefined}
+                                          bullets={message.reviewTableGenerationLoadingState?.isLoading 
+                                            ? ['Analyzing selected precedent companies', 'Extracting risk factors from S-1 filings', 'Organizing by category and relevance'].slice(0, message.reviewTableGenerationLoadingState?.visibleBullets || 0)
+                                            : ['Analyzing selected precedent companies', 'Extracting risk factors from S-1 filings', 'Organizing by category and relevance']
+                                          }
+                                          defaultOpen={false}
+                                          isLoading={message.reviewTableGenerationLoadingState?.isLoading}
+                                          icon={FileSpreadsheet}
+                                        />
+                                        
+                                        {/* Review Table Message - show after generation completes */}
+                                        {!message.reviewTableGenerationLoadingState?.isLoading && message.reviewTableMessage && (
+                                          <motion.div
+                                            className="mt-3 pl-2 text-neutral-700"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+                                          >
+                                            {message.reviewTableMessage}
+                                          </motion.div>
+                                        )}
+                                        
+                                        {/* Review Table Artifact Card - show after generation completes */}
+                                        {!message.reviewTableGenerationLoadingState?.isLoading && message.reviewTableArtifactData && (
+                                          <motion.div 
+                                            className="mt-2.5 pl-2"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}
+                                          >
+                                            <ArtifactCard
+                                              title={message.reviewTableArtifactData.title}
+                                              subtitle={message.reviewTableArtifactData.subtitle}
+                                              variant="large"
+                                              onClick={() => {
+                                                const artifactData = {
+                                                  title: message.reviewTableArtifactData!.title,
+                                                  subtitle: message.reviewTableArtifactData!.subtitle
+                                                };
+                                                setSelectedReviewTableArtifact(artifactData);
+                                                setCurrentArtifactType('review-table');
+                                                setUnifiedArtifactPanelOpen(true);
+                                                setReviewTablePanelOpen(true);
+                                              }}
+                                            />
+                                          </motion.div>
+                                        )}
+                                      </motion.div>
+                                    </AnimatePresence>
+                                  )}
+                                </>
+                              )}
+                            </motion.div>
+                          </AnimatePresence>
+                        )}
+                        
                         {/* Workflow shortcut buttons */}
                         {message.isWorkflowResponse && message.workflowTitle?.toLowerCase().includes('s-1') && !messages.some(msg => msg.type === 'files') && (
                               <div className="pl-2 mt-4">
@@ -1420,7 +2104,9 @@ export default function AssistantChatPage({
                                 className="py-1 px-3 bg-white border border-neutral-200 rounded-md hover:border-neutral-300 transition-colors"
                                 onClick={() => {
                                   // Skip and send a follow-up message
-                                  const skipMessage = "I don't have any documents to upload right now. Please proceed with creating a draft S-1 shell.";
+                                  const skipMessage = message.workflowTitle?.toLowerCase().includes('risk factors') 
+                                    ? "I don't have any documents to upload right now. Please proceed with creating draft S-1 risk factors."
+                                    : "I don't have any documents to upload right now. Please proceed with creating a draft S-1 shell.";
                                   setInputValue(skipMessage);
                                   sendMessage(skipMessage);
                                 }}
@@ -1492,6 +2178,7 @@ export default function AssistantChatPage({
                     {message.role === 'user' && (
                       <AnimatePresence>
                         <motion.div
+                          key="user-message"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4, ease: "easeOut" }}
@@ -1714,6 +2401,7 @@ export default function AssistantChatPage({
       <AnimatePresence>
                   {sourcesDrawerOpen && !anyArtifactPanelOpen && (
           <motion.div 
+            key="sources-panel-second"
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 400, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
@@ -1779,6 +2467,33 @@ export default function AssistantChatPage({
                 sourcesDrawerOpen={sourcesDrawerOpen}
                 onSourcesDrawerOpenChange={setSourcesDrawerOpen}
               />
+            ) : currentArtifactType === 'review-table' ? (
+              <ReviewTablePanel
+                selectedArtifact={selectedReviewTableArtifact}
+                isEditingArtifactTitle={isEditingReviewTableArtifactTitle}
+                editedArtifactTitle={editedReviewTableArtifactTitle}
+                onEditedArtifactTitleChange={setEditedReviewTableArtifactTitle}
+                onStartEditingTitle={() => {
+                  setIsEditingReviewTableArtifactTitle(true);
+                  setEditedReviewTableArtifactTitle(selectedReviewTableArtifact?.title || 'Review Table');
+                }}
+                onSaveTitle={handleSaveReviewTableArtifactTitle}
+                onClose={() => {
+                  setUnifiedArtifactPanelOpen(false);
+                  setReviewTablePanelOpen(false);
+                  setSelectedReviewTableArtifact(null);
+                  setCurrentArtifactType(null);
+                }}
+                chatOpen={chatOpen}
+                onToggleChat={toggleChat}
+                shareArtifactDialogOpen={shareArtifactDialogOpen}
+                onShareArtifactDialogOpenChange={setShareArtifactDialogOpen}
+                exportReviewDialogOpen={exportReviewDialogOpen}
+                onExportReviewDialogOpenChange={setExportReviewDialogOpen}
+                artifactTitleInputRef={reviewTableArtifactTitleInputRef}
+                sourcesDrawerOpen={sourcesDrawerOpen}
+                onSourcesDrawerOpenChange={setSourcesDrawerOpen}
+              />
             ) : null}
           </>
         )}
@@ -1788,8 +2503,9 @@ export default function AssistantChatPage({
       
       {/* Sources Panel - Shows as third panel when artifact is open and above 2xl */}
       <AnimatePresence>
-        {sourcesDrawerOpen && (artifactPanelOpen || draftArtifactPanelOpen) && isAbove2xl && (
+        {sourcesDrawerOpen && (artifactPanelOpen || draftArtifactPanelOpen || reviewTablePanelOpen) && isAbove2xl && (
           <motion.div 
+            key="sources-panel-third"
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 400, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
@@ -1887,8 +2603,20 @@ export default function AssistantChatPage({
 
           // Add AI response with thinking states after a delay
           setTimeout(() => {
+            // Check if this is a Risk Factors workflow by looking at existing messages
+            const workflowMessage = messages.find(msg => msg.isWorkflowResponse && msg.workflowTitle);
+            const isRiskFactorsWorkflow = workflowMessage?.workflowTitle?.toLowerCase().includes('risk factors');
+            
             // Get thinking content for file processing
-            const thinkingContent = {
+            const thinkingContent = isRiskFactorsWorkflow ? {
+              summary: "The user has uploaded documents that I need to analyze for risk identification. I'll extract key business risks, operational challenges, and regulatory considerations that should be disclosed in the S-1 risk factors section.",
+              bullets: [
+                "Identify business and operational risks",
+                "Analyze financial vulnerabilities and market conditions",
+                "Extract regulatory and compliance challenges"
+              ],
+              additionalText: ""
+            } : {
               summary: "The user has uploaded documents that I need to process and review thoroughly. I'll analyze each document to extract key information, identify relevant sections for S-1 filing requirements that will be essential for drafting a comprehensive S-1 statement.",
               bullets: [
                 "Understand the business structure and financials",
@@ -2017,7 +2745,13 @@ export default function AssistantChatPage({
                         ...msg,
                         showFileReview: true,
                         fileReviewContent: {
-                          summary: "I will review all the uploaded documents to extract key information needed for the S-1 registration statement, including business operations, financial data, risk factors, and material agreements.",
+                          summary: (() => {
+                            const workflowMsg = prev.find(m => m.isWorkflowResponse && m.workflowTitle);
+                            const isRiskFactors = workflowMsg?.workflowTitle?.toLowerCase().includes('risk factors');
+                            return isRiskFactors
+                              ? "I will review all the uploaded documents to identify and extract risk factors including business risks, operational challenges, financial exposures, regulatory considerations, and competitive threats."
+                              : "I will review all the uploaded documents to extract key information needed for the S-1 registration statement, including business operations, financial data, risk factors, and material agreements.";
+                          })(),
                           files: reviewFiles,
                           totalFiles: uploadedFilesCount
                         },
@@ -2082,24 +2816,33 @@ export default function AssistantChatPage({
                     });
                   }, 100);
                   
-                  // Show draft generation thinking state after a delay
+                  // Show appropriate thinking state based on workflow type
                   setTimeout(() => {
-                    setMessages(prev => prev.map((msg, idx) => {
-                      if (idx === prev.length - 1 && msg.role === 'assistant') {
-                        return {
-                          ...msg,
-                          showDraftGeneration: true,
-                          draftGenerationLoadingState: {
-                            isLoading: true,
-                            showSummary: false,
-                            visibleBullets: 0
-                          }
-                        };
-                      }
-                      return msg;
-                    }));
+                    const isRiskFactors = messages.find(m => m.isWorkflowResponse && m.workflowTitle)?.workflowTitle?.toLowerCase().includes('risk factors');
                     
-                    // Scroll to show draft generation
+                    if (isRiskFactors) {
+                      // For Risk Factors workflow, wait for user to select counsel filter
+                      // EDGAR review will be triggered by button click
+                      setIsLoading(false);
+                    } else {
+                      // For S-1 Shell workflow, show draft generation
+                      setMessages(prev => prev.map((msg, idx) => {
+                        if (idx === prev.length - 1 && msg.role === 'assistant') {
+                          return {
+                            ...msg,
+                            showDraftGeneration: true,
+                            draftGenerationLoadingState: {
+                              isLoading: true,
+                              showSummary: false,
+                              visibleBullets: 0
+                            }
+                          };
+                        }
+                        return msg;
+                      }));
+                    }
+                    
+                    // Scroll to show thinking state
                     setTimeout(() => {
                       messagesContainerRef.current?.scrollTo({
                         top: messagesContainerRef.current.scrollHeight,
@@ -2107,26 +2850,37 @@ export default function AssistantChatPage({
                       });
                     }, 100);
                     
-                    // Progressive reveal of draft generation content
-                    // Show summary after 600ms
-                    setTimeout(() => {
-                      setMessages(prev => prev.map((msg, idx) => {
-                        if (idx === prev.length - 1 && msg.role === 'assistant' && msg.draftGenerationLoadingState?.isLoading) {
-                          return {
-                            ...msg,
-                            draftGenerationLoadingState: {
-                              ...msg.draftGenerationLoadingState,
-                              showSummary: true
+                    if (isRiskFactors) {
+                      // Progressive reveal of EDGAR filings
+                      const edgarFilings = [
+                        { company: "CrowdStrike", date: "091820", type: "S-1" },
+                        { company: "Snowflake", date: "082420", type: "S-1" },
+                        { company: "Unity Software", date: "081720", type: "S-1" },
+                        { company: "Palantir", date: "082520", type: "S-1" },
+                        { company: "Asana", date: "082420", type: "S-1" },
+                        { company: "JFrog", date: "090820", type: "S-1" }
+                      ];
+                      
+                      // Load filings one by one
+                      edgarFilings.forEach((_, filingIdx) => {
+                        setTimeout(() => {
+                          setMessages(prev => prev.map((msg, idx) => {
+                            if (idx === prev.length - 1 && msg.role === 'assistant' && msg.edgarReviewLoadingState?.isLoading) {
+                              return {
+                                ...msg,
+                                edgarReviewLoadingState: {
+                                  ...msg.edgarReviewLoadingState,
+                                  loadedFilings: filingIdx + 1
+                                }
+                              };
                             }
-                          };
-                        }
-                        return msg;
-                      }));
-                    }, 600);
-                    
-                    // Show bullets progressively
-                    const draftBullets = getThinkingContent('draft').bullets;
-                    draftBullets.forEach((_, bulletIdx) => {
+                            return msg;
+                          }));
+                        }, 600 + (filingIdx * 300)); // Start at 600ms, then 300ms between each filing
+                      });
+                    } else {
+                      // Progressive reveal of draft generation content
+                      // Show summary after 600ms
                       setTimeout(() => {
                         setMessages(prev => prev.map((msg, idx) => {
                           if (idx === prev.length - 1 && msg.role === 'assistant' && msg.draftGenerationLoadingState?.isLoading) {
@@ -2134,52 +2888,92 @@ export default function AssistantChatPage({
                               ...msg,
                               draftGenerationLoadingState: {
                                 ...msg.draftGenerationLoadingState,
-                                visibleBullets: bulletIdx + 1
+                                showSummary: true
                               }
                             };
                           }
                           return msg;
                         }));
-                      }, 1200 + (bulletIdx * 400)); // Start at 1.2s, then 400ms between each bullet
-                    });
-                    
-                    // Complete draft generation after some time
-                    setTimeout(() => {
-                      setMessages(prev => prev.map((msg, idx) => {
-                        if (idx === prev.length - 1 && msg.role === 'assistant') {
-                          return {
-                            ...msg,
-                            artifactData: {
-                              title: "ValarAI S-1 Statement Shell",
-                              subtitle: "Draft document with key sections and placeholders",
-                              variant: 'draft'
-                            },
-                            draftGenerationLoadingState: {
-                              isLoading: false,
-                              showSummary: true,
-                              visibleBullets: getThinkingContent('draft').bullets.length
-                            }
-                          };
-                        }
-                        return msg;
-                      }));
+                      }, 600);
                       
-                      // Automatically open the draft artifact panel after a delay
-                      setTimeout(() => {
-                        setSelectedDraftArtifact({
-                          title: "ValarAI S-1 Statement Shell",
-                          subtitle: "Draft document with key sections and placeholders"
+                      // Show bullets progressively
+                      const draftBullets = getThinkingContent('draft').bullets;
+                      draftBullets.forEach((_, bulletIdx) => {
+                        setTimeout(() => {
+                          setMessages(prev => prev.map((msg, idx) => {
+                            if (idx === prev.length - 1 && msg.role === 'assistant' && msg.draftGenerationLoadingState?.isLoading) {
+                              return {
+                                ...msg,
+                                draftGenerationLoadingState: {
+                                  ...msg.draftGenerationLoadingState,
+                                  visibleBullets: bulletIdx + 1
+                                }
+                              };
+                            }
+                            return msg;
+                          }));
+                        }, 1200 + (bulletIdx * 400)); // Start at 1.2s, then 400ms between each bullet
+                      });
+                    }
+                    
+                    // Complete thinking state
+                    setTimeout(() => {
+                      setMessages(prev => {
+                        // Check if this is a Risk Factors workflow
+                        const workflowMsg = prev.find(m => m.isWorkflowResponse && m.workflowTitle);
+                        const isRiskFactors = workflowMsg?.workflowTitle?.toLowerCase().includes('risk factors');
+                        
+                        return prev.map((msg, idx) => {
+                          if (idx === prev.length - 1 && msg.role === 'assistant') {
+                            if (isRiskFactors) {
+                              // For Risk Factors, completion will happen via button click
+                              return msg;
+                            } else {
+                              // Complete draft generation for S-1 Shell - with artifact
+                              return {
+                                ...msg,
+                                artifactData: {
+                                  title: "ValarAI S-1 Statement Shell",
+                                  subtitle: "Draft document with key sections and placeholders",
+                                  variant: 'draft'
+                                },
+                                draftGenerationLoadingState: {
+                                  isLoading: false,
+                                  showSummary: true,
+                                  visibleBullets: getThinkingContent('draft').bullets.length
+                                }
+                              };
+                            }
+                          }
+                          return msg;
                         });
-                        setCurrentArtifactType('draft');
-                        setUnifiedArtifactPanelOpen(true);
-                      }, 800); // Delay to let artifact card appear and animate first
+                      });
+                      
+                      // Automatically open the draft artifact panel after a delay (only for S-1 Shell)
+                      if (!isRiskFactors) {
+                        setTimeout(() => {
+                          // Get the artifact data from messages to ensure consistency
+                          setMessages(prev => {
+                            const lastMsg = prev[prev.length - 1];
+                            if (lastMsg?.artifactData) {
+                              setSelectedDraftArtifact({
+                                title: lastMsg.artifactData.title,
+                                subtitle: lastMsg.artifactData.subtitle
+                              });
+                            }
+                            return prev;
+                          });
+                          setCurrentArtifactType('draft');
+                          setUnifiedArtifactPanelOpen(true);
+                        }, 800); // Delay to let artifact card appear and animate first
+                      }
                       
                       // Final set loading to false
                       setTimeout(() => {
                         setIsLoading(false);
                       }, 1200); // After panel opens
-                    }, 4000); // 4 seconds for draft generation
-                  }, 800); // Show draft generation 800ms after file review completes
+                    }, isRiskFactors ? 2800 : 4000); // 2.8s for EDGAR review, 4s for draft generation
+                  }, 800); // Show thinking state 800ms after file review completes
                 }, reviewFilesCompleteDelay); // After all files + buffer
               }, 600); // Show file review state 600ms after content appears
             }, 2400); // Total time for thinking states to complete (summary + 3 bullets)

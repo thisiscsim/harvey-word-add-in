@@ -60,29 +60,33 @@ export default function DraftArtifactPanel({
   // State to force re-renders on selection change
   const [, forceUpdate] = useState({});
 
-  // Initialize Tiptap editor
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3, 4, 5, 6],
-        },
-      }),
-      Underline,
-      Highlight.configure({
-        multicolor: true,
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-600 underline',
-        },
-      }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-    ],
-    content: `
+  // Determine content based on artifact type
+  const getInitialContent = () => {
+    if (selectedArtifact?.title?.toLowerCase().includes('risk factors')) {
+      return `
+      <h1>RISK FACTORS</h1>
+      <p>An investment in our common stock involves a high degree of risk. You should carefully consider the risks and uncertainties described below, together with all of the other information in this prospectus, including our consolidated financial statements and related notes, before making an investment decision. If any of the following risks actually occurs, our business, financial condition, results of operations and prospects could be materially and adversely affected. In that event, the market price of our common stock could decline and you could lose part or all of your investment.</p>
+      
+      <h2>Risks Related to Our Business and Industry</h2>
+      
+      <h3>We have a history of losses, and we may not achieve or maintain profitability in the future.</h3>
+      <p>We have incurred significant net losses in each period since inception. We incurred net losses of $XX million, $XX million and $XX million for the years ended December 31, 2021, 2022 and 2023, respectively. As of September 30, 2024, we had an accumulated deficit of $XX million. These losses and accumulated deficit reflect the substantial investments we made to develop our products and services, build our engineering and sales teams, and establish our market presence.</p>
+      
+      <h3>Our limited operating history makes it difficult to evaluate our current business and future prospects.</h3>
+      <p>We were incorporated in 2018 and launched our first commercial product in 2020. Our limited operating history makes it difficult to evaluate our current business and future prospects. We have encountered and will continue to encounter risks and difficulties frequently experienced by growing companies in rapidly changing industries.</p>
+      
+      <h3>We operate in a highly competitive market and face competition from established competitors and new market entrants.</h3>
+      <p>The market for AI-powered solutions is intensely competitive and characterized by rapid technological change. We compete with large technology companies such as Google, Microsoft, and Amazon, as well as numerous startups and emerging companies. Many of our competitors have greater financial, technical, and other resources than we do.</p>
+      
+      <h2>Risks Related to Our Financial Condition and Capital Requirements</h2>
+      
+      <h3>We will require additional capital to support business growth, and this capital might not be available on acceptable terms.</h3>
+      <p>We expect our expenses to increase substantially in connection with our ongoing activities, particularly as we continue to expand our operations, develop new products, and operate as a public company. Our future capital requirements will depend on many factors.</p>
+      `;
+    }
+    
+    // Default S-1 Shell content
+    return `
       <h2>United States</h2>
       <h3>Securities and Exchange Commission</h3>
       <h3>Washington, D.C. 20549</h3>
@@ -103,7 +107,7 @@ export default function DraftArtifactPanel({
       <strong>San Francisco, CA 94105</strong><br/>
       <strong>123-456-7890</strong><br/>
       
-      <p><strong>Paul, Weiss, Rifkind, Wharton & Garrison LLP</strong><br/>
+      <p><strong>Latham & Watkins LLP</strong><br/>
       <strong>535 Mission St</strong><br/>
       <strong>San Francisco, CA 94105</strong><br/>
       <strong>628-432-5100</strong><br/>
@@ -393,7 +397,32 @@ export default function DraftArtifactPanel({
         <li>Contractual Obligations</li>
         <li>Off-Balance Sheet Arrangements</li>
       </ul>
-    `,
+    `;
+  };
+
+  // Initialize Tiptap editor
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3, 4, 5, 6],
+        },
+      }),
+      Underline,
+      Highlight.configure({
+        multicolor: true,
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-blue-600 underline',
+        },
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+    ],
+    content: getInitialContent(),
     immediatelyRender: false,
     editorProps: {
       attributes: {

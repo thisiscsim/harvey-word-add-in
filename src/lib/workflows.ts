@@ -13,18 +13,19 @@ export interface Workflow {
 
 export const draftItems: Workflow[] = [
   { id: 1, title: 'Draft an S-1 Filing', type: 'Draft', steps: '5 steps', description: 'Create SEC registration statement for IPO' },
-  { id: 2, title: 'Draft board resolutions', type: 'Draft', steps: '6 steps', description: 'Create corporate board meeting resolutions' },
-  { id: 3, title: 'Draft employment agreements', type: 'Draft', steps: '7 steps', description: 'Create executive employment contracts' },
-  { id: 4, title: 'Draft legal opinion memorandum', type: 'Draft', steps: '8 steps', description: 'Prepare detailed legal analysis memo' },
-  { id: 5, title: 'Draft real estate purchase agreement', type: 'Draft', steps: '9 steps', description: 'Create property acquisition contracts' },
-  { id: 6, title: 'Draft NDA for vendor engagement', type: 'Draft', steps: '4 steps', description: 'Prepare non-disclosure agreement for vendors' },
-  { id: 7, title: 'Draft engagement letter', type: 'Draft', steps: '5 steps', description: 'Prepare client engagement letter' },
-  { id: 8, title: 'Draft board meeting minutes', type: 'Draft', steps: '4 steps', description: 'Prepare formal meeting minutes' },
-  { id: 9, title: 'Draft asset purchase agreement', type: 'Draft', steps: '8 steps', description: 'Prepare APA core terms' },
-  { id: 10, title: 'Draft services agreement', type: 'Draft', steps: '6 steps', description: 'Prepare master services agreement' },
-  { id: 11, title: 'Draft loan agreement', type: 'Draft', steps: '7 steps', description: 'Prepare commercial loan agreement' },
-  { id: 12, title: 'Draft lease agreement', type: 'Draft', steps: '6 steps', description: 'Prepare commercial lease' },
-  { id: 13, title: 'Draft operating agreement', type: 'Draft', steps: '7 steps', description: 'Prepare LLC operating agreement' },
+  { id: 2, title: 'Draft S-1 Risk Factors', type: 'Draft', steps: '4 steps', description: 'Create comprehensive risk factors section for S-1' },
+  { id: 3, title: 'Draft board resolutions', type: 'Draft', steps: '6 steps', description: 'Create corporate board meeting resolutions' },
+  { id: 4, title: 'Draft employment agreements', type: 'Draft', steps: '7 steps', description: 'Create executive employment contracts' },
+  { id: 5, title: 'Draft legal opinion memorandum', type: 'Draft', steps: '8 steps', description: 'Prepare detailed legal analysis memo' },
+  { id: 6, title: 'Draft real estate purchase agreement', type: 'Draft', steps: '9 steps', description: 'Create property acquisition contracts' },
+  { id: 7, title: 'Draft NDA for vendor engagement', type: 'Draft', steps: '4 steps', description: 'Prepare non-disclosure agreement for vendors' },
+  { id: 8, title: 'Draft engagement letter', type: 'Draft', steps: '5 steps', description: 'Prepare client engagement letter' },
+  { id: 9, title: 'Draft board meeting minutes', type: 'Draft', steps: '4 steps', description: 'Prepare formal meeting minutes' },
+  { id: 10, title: 'Draft asset purchase agreement', type: 'Draft', steps: '8 steps', description: 'Prepare APA core terms' },
+  { id: 11, title: 'Draft services agreement', type: 'Draft', steps: '6 steps', description: 'Prepare master services agreement' },
+  { id: 12, title: 'Draft loan agreement', type: 'Draft', steps: '7 steps', description: 'Prepare commercial loan agreement' },
+  { id: 13, title: 'Draft lease agreement', type: 'Draft', steps: '6 steps', description: 'Prepare commercial lease' },
+  { id: 14, title: 'Draft operating agreement', type: 'Draft', steps: '7 steps', description: 'Prepare LLC operating agreement' },
 ];
 
 export const outputItems: Workflow[] = [
