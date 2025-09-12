@@ -820,12 +820,19 @@ export default function AssistantChatPage({
           // Add EDGAR review after a delay
           setTimeout(() => {
             const edgarFilings = [
-              { company: "CrowdStrike", date: "091820", type: "S-1" },
-              { company: "Snowflake", date: "082420", type: "S-1" },
-              { company: "Unity Software", date: "081720", type: "S-1" },
-              { company: "Palantir", date: "082520", type: "S-1" },
-              { company: "Asana", date: "082420", type: "S-1" },
-              { company: "JFrog", date: "090820", type: "S-1" }
+              { company: "CrowdStrike Holdings", date: "(08192832)", type: "S-1" },
+              { company: "Okta Inc.", date: "(03172847)", type: "S-1" },
+              { company: "SentinelOne", date: "(06302951)", type: "S-1" },
+              { company: "Snowflake Inc.", date: "(08242857)", type: "S-1" },
+              { company: "Datadog Inc.", date: "(09192841)", type: "S-1" },
+              { company: "Zscaler Inc.", date: "(02162847)", type: "S-1" },
+              { company: "MongoDB Inc.", date: "(09212849)", type: "S-1" },
+              { company: "HashiCorp Inc.", date: "(11042861)", type: "S-1" },
+              { company: "UiPath Inc.", date: "(03262854)", type: "S-1" },
+              { company: "Confluent Inc.", date: "(05192856)", type: "S-1" },
+              { company: "GitLab Inc.", date: "(09172859)", type: "S-1" },
+              { company: "Palantir Technologies", date: "(08252851)", type: "S-1" },
+              { company: "Unity Software Inc.", date: "(08242850)", type: "S-1" }
             ];
 
             setMessages(prev => {
@@ -837,7 +844,7 @@ export default function AssistantChatPage({
                   showEdgarReview: true,
                   edgarReviewContent: {
                     summary: "I will analyze recent S-1 filings from technology companies to identify common risk factors and industry-specific disclosures.",
-                    filings: edgarFilings,
+                    filings: edgarFilings.slice(0, 9), // Show only first 9 (3 rows)
                     totalFilings: edgarFilings.length
                   },
                   edgarReviewLoadingState: {
@@ -866,7 +873,7 @@ export default function AssistantChatPage({
                 return msg;
               }));
               
-              if (loadedCount >= 6) {
+              if (loadedCount >= 9) {
                 clearInterval(progressInterval);
                 
                 // Complete EDGAR review and show final message
@@ -879,23 +886,21 @@ export default function AssistantChatPage({
                           isLoading: false,
                           loadedFilings: 6
                         },
-                        edgarReviewCompleteMessage: "I've identified and compiled the 15 most relevant precedent IPO S-1s into a review table. I recommend selecting at least 3-7 companies from this table to include in the Risk Factor Matrix, which will serve as the basis for drafting the Risk Factor section.",
+                        edgarReviewCompleteMessage: "I've identified and compiled the 13 most relevant precedent IPO S-1s into a review table. I recommend selecting at least 3-7 companies from this table to include in the Risk Factor Matrix, which will serve as the basis for drafting the Risk Factor section.",
                         precedentCompaniesData: [
-                          { id: '1', company: 'CrowdStrike Holdings', ticker: 'CRWD', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Cybersecurity', revenueAtIPO: '$249M', dateOfFiling: '2019-05-06', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'Davis Polk', class: 'Single', selected: true },
-                          { id: '2', company: 'Okta Inc.', ticker: 'OKTA', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Identity Management', revenueAtIPO: '$92M', dateOfFiling: '2017-03-17', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Goodwin Procter', class: 'Double', selected: true },
-                          { id: '3', company: 'SentinelOne', ticker: 'S', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Endpoint Security', revenueAtIPO: '$176M', dateOfFiling: '2021-06-08', issuersCounsel: 'Fenwick & West', uwCounsel: 'Cooley LLP', class: 'Single', selected: true },
-                          { id: '4', company: 'Snowflake Inc.', ticker: 'SNOW', tier: 'Tier 2', tierColor: 'yellow', similarity: 80, industry: 'Data Platform', revenueAtIPO: '$264M', dateOfFiling: '2020-08-24', issuersCounsel: 'Cooley LLP', uwCounsel: 'Simpson Thacher', class: 'Double', selected: false },
-                          { id: '5', company: 'Cloudflare Inc', ticker: 'NET', tier: 'Tier 2', tierColor: 'yellow', similarity: 80, industry: 'Web Security', revenueAtIPO: '$387M', dateOfFiling: '2019-08-15', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Fenwick & West', class: 'Single', selected: false },
-                          { id: '6', company: 'Datadog Inc.', ticker: 'DDOG', tier: 'Tier 1', tierColor: 'blue', similarity: 85, industry: 'Monitoring Platform', revenueAtIPO: '$198M', dateOfFiling: '2019-08-20', issuersCounsel: 'Orrick Herrington', uwCounsel: 'Davis Polk', class: 'Double', selected: false },
-                          { id: '7', company: 'Zscaler Inc.', ticker: 'ZS', tier: 'Tier 1', tierColor: 'blue', similarity: 88, industry: 'Cloud Security', revenueAtIPO: '$127M', dateOfFiling: '2018-02-16', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'White & Case', class: 'Single', selected: false },
-                          { id: '8', company: 'Elastic N.V.', ticker: 'ESTC', tier: 'Tier 2', tierColor: 'yellow', similarity: 75, industry: 'Search & Analytics', revenueAtIPO: '$160M', dateOfFiling: '2018-08-31', issuersCounsel: 'Shearman & Sterling', uwCounsel: 'Latham & Watkins', class: 'Single', selected: false },
-                          { id: '9', company: 'MongoDB Inc.', ticker: 'MDB', tier: 'Tier 2', tierColor: 'yellow', similarity: 78, industry: 'Database Platform', revenueAtIPO: '$101M', dateOfFiling: '2017-09-21', issuersCounsel: 'Cooley LLP', uwCounsel: 'Wilson Sonsini', class: 'Double', selected: false },
-                          { id: '10', company: 'HashiCorp Inc.', ticker: 'HCP', tier: 'Tier 2', tierColor: 'yellow', similarity: 76, industry: 'Infrastructure Automation', revenueAtIPO: '$211M', dateOfFiling: '2021-11-04', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Fenwick & West', class: 'Single', selected: false },
-                          { id: '11', company: 'UiPath Inc.', ticker: 'PATH', tier: 'Tier 2', tierColor: 'yellow', similarity: 72, industry: 'Robotic Process Automation', revenueAtIPO: '$607M', dateOfFiling: '2021-03-26', issuersCounsel: 'Skadden Arps', uwCounsel: 'Sullivan & Cromwell', class: 'Double', selected: false },
-                          { id: '12', company: 'Confluent Inc.', ticker: 'CFLT', tier: 'Tier 2', tierColor: 'yellow', similarity: 74, industry: 'Data Streaming', revenueAtIPO: '$237M', dateOfFiling: '2021-05-19', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'Simpson Thacher', class: 'Single', selected: false },
-                          { id: '13', company: 'GitLab Inc.', ticker: 'GTLB', tier: 'Tier 2', tierColor: 'yellow', similarity: 73, industry: 'DevOps Platform', revenueAtIPO: '$152M', dateOfFiling: '2021-09-17', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Davis Polk', class: 'Single', selected: false },
-                          { id: '14', company: 'Palantir Technologies', ticker: 'PLTR', tier: 'Tier 1', tierColor: 'blue', similarity: 82, industry: 'Data Analytics', revenueAtIPO: '$743M', dateOfFiling: '2020-08-25', issuersCounsel: 'Weil Gotshal', uwCounsel: 'Cravath Swaine', class: 'Double', selected: false },
-                          { id: '15', company: 'Unity Software Inc.', ticker: 'U', tier: 'Tier 2', tierColor: 'yellow', similarity: 70, industry: 'Game Development Platform', revenueAtIPO: '$542M', dateOfFiling: '2020-08-24', issuersCounsel: 'Cooley LLP', uwCounsel: 'Wilson Sonsini', class: 'Single', selected: false },
+                          { id: '1', company: 'CrowdStrike Holdings', ticker: 'CRWD', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Cybersecurity', revenueAtIPO: '$249M', dateOfFiling: '2019-05-06', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'Davis Polk', class: 'Single', selected: true, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/crowdstrike.jpg' },
+                          { id: '2', company: 'Okta Inc.', ticker: 'OKTA', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Identity Management', revenueAtIPO: '$92M', dateOfFiling: '2017-03-17', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Goodwin Procter', class: 'Double', selected: true, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/okta.jpg' },
+                          { id: '3', company: 'SentinelOne', ticker: 'S', tier: 'Tier 1', tierColor: 'blue', similarity: 90, industry: 'Endpoint Security', revenueAtIPO: '$176M', dateOfFiling: '2021-06-08', issuersCounsel: 'Fenwick & West', uwCounsel: 'Cooley LLP', class: 'Single', selected: true, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/sentinelone.png' },
+                          { id: '4', company: 'Snowflake Inc.', ticker: 'SNOW', tier: 'Tier 2', tierColor: 'yellow', similarity: 80, industry: 'Data Platform', revenueAtIPO: '$264M', dateOfFiling: '2020-08-24', issuersCounsel: 'Cooley LLP', uwCounsel: 'Simpson Thacher', class: 'Double', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/snowflake.png' },
+                          { id: '5', company: 'Datadog Inc.', ticker: 'DDOG', tier: 'Tier 1', tierColor: 'blue', similarity: 85, industry: 'Monitoring Platform', revenueAtIPO: '$198M', dateOfFiling: '2019-08-20', issuersCounsel: 'Orrick Herrington', uwCounsel: 'Davis Polk', class: 'Double', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/datadog.png' },
+                          { id: '6', company: 'Zscaler Inc.', ticker: 'ZS', tier: 'Tier 1', tierColor: 'blue', similarity: 88, industry: 'Cloud Security', revenueAtIPO: '$127M', dateOfFiling: '2018-02-16', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'White & Case', class: 'Single', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/zscaler.jpg' },
+                          { id: '7', company: 'MongoDB Inc.', ticker: 'MDB', tier: 'Tier 2', tierColor: 'yellow', similarity: 78, industry: 'Database Platform', revenueAtIPO: '$101M', dateOfFiling: '2017-09-21', issuersCounsel: 'Cooley LLP', uwCounsel: 'Wilson Sonsini', class: 'Double', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/mongodb.png' },
+                          { id: '8', company: 'HashiCorp Inc.', ticker: 'HCP', tier: 'Tier 2', tierColor: 'yellow', similarity: 76, industry: 'Infrastructure Automation', revenueAtIPO: '$211M', dateOfFiling: '2021-11-04', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Fenwick & West', class: 'Single', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/hashi.jpg' },
+                          { id: '9', company: 'UiPath Inc.', ticker: 'PATH', tier: 'Tier 2', tierColor: 'yellow', similarity: 72, industry: 'Robotic Process Automation', revenueAtIPO: '$607M', dateOfFiling: '2021-03-26', issuersCounsel: 'Skadden Arps', uwCounsel: 'Sullivan & Cromwell', class: 'Double', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/uipath.png' },
+                          { id: '10', company: 'Confluent Inc.', ticker: 'CFLT', tier: 'Tier 2', tierColor: 'yellow', similarity: 74, industry: 'Data Streaming', revenueAtIPO: '$237M', dateOfFiling: '2021-05-19', issuersCounsel: 'Wilson Sonsini', uwCounsel: 'Simpson Thacher', class: 'Single', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/confluent.jpg' },
+                          { id: '11', company: 'GitLab Inc.', ticker: 'GTLB', tier: 'Tier 2', tierColor: 'yellow', similarity: 73, industry: 'DevOps Platform', revenueAtIPO: '$152M', dateOfFiling: '2021-09-17', issuersCounsel: 'Latham & Watkins', uwCounsel: 'Davis Polk', class: 'Single', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/gitlab.jpg' },
+                          { id: '12', company: 'Palantir Technologies', ticker: 'PLTR', tier: 'Tier 1', tierColor: 'blue', similarity: 82, industry: 'Data Analytics', revenueAtIPO: '$743M', dateOfFiling: '2020-08-25', issuersCounsel: 'Weil Gotshal', uwCounsel: 'Cravath Swaine', class: 'Double', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/palantir.jpg' },
+                          { id: '13', company: 'Unity Software Inc.', ticker: 'U', tier: 'Tier 2', tierColor: 'yellow', similarity: 70, industry: 'Game Development Platform', revenueAtIPO: '$542M', dateOfFiling: '2020-08-24', issuersCounsel: 'Cooley LLP', uwCounsel: 'Wilson Sonsini', class: 'Single', selected: false, s1Url: 'https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm', logo: '/company-precedent-logo/unity.jpg' },
                         ]
                       };
                     }
@@ -905,8 +910,8 @@ export default function AssistantChatPage({
                   scrollToBottom();
                 }, 500);
               }
-            }, 400);
-          }, 800); // Small delay before showing EDGAR review
+            }, 600); // Increased from 400ms to 600ms for more realistic timing
+          }, 1200); // Increased delay before showing EDGAR review
           
           return; // Exit early, we handled this case
         }
@@ -1906,7 +1911,7 @@ export default function AssistantChatPage({
                                             )}
                                           </div>
                                           <span className="text-neutral-700 truncate max-w-[200px]">
-                                            {filing.company} ({filing.date}) ({filing.type})
+                                            {filing.company} {filing.date}
                                           </span>
                                         </motion.div>
                                       ))}
@@ -2901,16 +2906,23 @@ export default function AssistantChatPage({
                     if (isRiskFactors) {
                       // Progressive reveal of EDGAR filings
                       const edgarFilings = [
-                        { company: "CrowdStrike", date: "091820", type: "S-1" },
-                        { company: "Snowflake", date: "082420", type: "S-1" },
-                        { company: "Unity Software", date: "081720", type: "S-1" },
-                        { company: "Palantir", date: "082520", type: "S-1" },
-                        { company: "Asana", date: "082420", type: "S-1" },
-                        { company: "JFrog", date: "090820", type: "S-1" }
+                        { company: "CrowdStrike Holdings", date: "(08192832)", type: "S-1" },
+                        { company: "Okta Inc.", date: "(03172847)", type: "S-1" },
+                        { company: "SentinelOne", date: "(06302951)", type: "S-1" },
+                        { company: "Snowflake Inc.", date: "(08242857)", type: "S-1" },
+                        { company: "Datadog Inc.", date: "(09192841)", type: "S-1" },
+                        { company: "Zscaler Inc.", date: "(02162847)", type: "S-1" },
+                        { company: "MongoDB Inc.", date: "(09212849)", type: "S-1" },
+                        { company: "HashiCorp Inc.", date: "(11042861)", type: "S-1" },
+                        { company: "UiPath Inc.", date: "(03262854)", type: "S-1" },
+                        { company: "Confluent Inc.", date: "(05192856)", type: "S-1" },
+                        { company: "GitLab Inc.", date: "(09172859)", type: "S-1" },
+                        { company: "Palantir Technologies", date: "(08252851)", type: "S-1" },
+                        { company: "Unity Software Inc.", date: "(08242850)", type: "S-1" }
                       ];
                       
-                      // Load filings one by one
-                      edgarFilings.forEach((_, filingIdx) => {
+                      // Load filings one by one (only first 9)
+                      edgarFilings.slice(0, 9).forEach((_, filingIdx) => {
                         setTimeout(() => {
                           setMessages(prev => prev.map((msg, idx) => {
                             if (idx === prev.length - 1 && msg.role === 'assistant' && msg.edgarReviewLoadingState?.isLoading) {
@@ -2924,7 +2936,7 @@ export default function AssistantChatPage({
                             }
                             return msg;
                           }));
-                        }, 600 + (filingIdx * 300)); // Start at 600ms, then 300ms between each filing
+                        }, 800 + (filingIdx * 500)); // Start at 800ms, then 500ms between each filing
                       });
                     } else {
                       // Progressive reveal of draft generation content

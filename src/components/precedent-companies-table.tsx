@@ -10,6 +10,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import Image from "next/image";
 
 export interface CompanyData {
   id: string;
@@ -25,6 +27,8 @@ export interface CompanyData {
   uwCounsel: string;
   class: string;
   selected: boolean;
+  s1Url?: string;
+  logo?: string;
 }
 
 interface PrecedentCompaniesTableProps {
@@ -83,7 +87,68 @@ export default function PrecedentCompaniesTable({
       size: 200,
       cell: ({ row }) => (
         <div className="flex flex-col gap-0">
-          <div className="text-neutral-900 font-normal text-sm truncate">{row.original.company}</div>
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <a 
+                href={row.original.s1Url || "https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-neutral-900 font-normal text-sm truncate transition-colors hover:text-neutral-700"
+                style={{ textDecoration: 'none' }}
+              >
+                {row.original.company}
+              </a>
+            </TooltipTrigger>
+            <TooltipContent 
+              side="top" 
+              className="bg-white border border-neutral-200 p-4 rounded-lg shadow-lg max-w-sm"
+              sideOffset={5}
+            >
+              <div className="flex flex-col gap-3">
+                {/* Header with avatar and company info */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                    <Image 
+                      src={row.original.logo || "/latham-logo.jpg"} 
+                      alt={row.original.company} 
+                      width={40} 
+                      height={40}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <h3 className="text-sm font-medium text-neutral-900">{row.original.company}</h3>
+                    <p className="text-xs text-neutral-500">{row.original.ticker}</p>
+                  </div>
+                </div>
+                
+                {/* S-1 Excerpt */}
+                <div className="text-xs text-neutral-700 leading-relaxed">
+                  <p className="line-clamp-6">
+                    We are a leader in cloud-delivered protection that stops breaches, 
+                    protects data, and powers business velocity with a cloud-native platform 
+                    that delivers comprehensive protection against sophisticated attacks. 
+                    Our Falcon platform leverages artificial intelligence and behavioral analysis 
+                    to provide real-time threat detection and response capabilities across 
+                    endpoints, cloud workloads, identity, and data. We have experienced rapid 
+                    growth, with our Annual Recurring Revenue (ARR) growing from $249.8 million 
+                    as of January 31, 2019 to $874.4 million as of January 31, 2021, representing 
+                    a compound annual growth rate of 87%. Our subscription-based model provides 
+                    predictable revenue streams and strong unit economics.
+                  </p>
+                  <button 
+                    className="mt-1 text-xs text-neutral-900 hover:text-neutral-600 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open(row.original.s1Url || "https://www.sec.gov/Archives/edgar/data/1535527/000104746919003095/a2238800zs-1.htm", '_blank');
+                    }}
+                  >
+                    View source
+                  </button>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
           <div className="text-neutral-500 text-xs">{row.original.ticker}</div>
         </div>
       ),
