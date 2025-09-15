@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, CloudUpload, FileSearch, LoaderCircle, FilePen, FileSpreadsheet } from "lucide-react";
+import { UserPlus, Download, ArrowLeft, X, Plus, ListPlus, Settings2, Wand, Copy, SquarePen, RotateCcw, ThumbsUp, ThumbsDown, CloudUpload, FileSearch, LoaderCircle, FilePen, FileSpreadsheet, Table2 } from "lucide-react";
 import SourcesDrawer from "@/components/sources-drawer";
 import ShareThreadDialog from "@/components/share-thread-dialog";
 import ShareArtifactDialog from "@/components/share-artifact-dialog";
@@ -858,6 +858,9 @@ export default function AssistantChatPage({
               return updatedMessages;
             });
             
+            // Scroll to bottom when EDGAR review section appears
+            setTimeout(() => scrollToBottom(), 100);
+            
             // Simulate EDGAR review progress
             let loadedCount = 0;
             const progressInterval = setInterval(() => {
@@ -874,6 +877,9 @@ export default function AssistantChatPage({
                 }
                 return msg;
               }));
+              
+              // Scroll to bottom as progress updates
+              scrollToBottom();
               
               if (loadedCount >= 9) {
                 clearInterval(progressInterval);
@@ -2055,7 +2061,7 @@ export default function AssistantChatPage({
                                               return msg;
                                             }));
                                             
-                                            // Open the review table panel
+                                            // Set artifact data immediately but delay panel opening
                                             const artifactData = {
                                               title: 'Risk Factor Review Table',
                                               subtitle: `${selectedCompanies.length} columns • 126 rows`
@@ -2063,8 +2069,12 @@ export default function AssistantChatPage({
                                             
                                             setSelectedReviewTableArtifact(artifactData);
                                             setCurrentArtifactType('review-table');
-                                            setUnifiedArtifactPanelOpen(true);
-                                            setReviewTablePanelOpen(true);
+                                            
+                                            // Delay panel opening to allow artifact card animation to complete
+                                            setTimeout(() => {
+                                              setUnifiedArtifactPanelOpen(true);
+                                              setReviewTablePanelOpen(true);
+                                            }, 800); // Wait for card animation (300ms delay + 400ms duration + buffer)
                                           }, 5600);
                                         }}
                                       />
@@ -2092,7 +2102,7 @@ export default function AssistantChatPage({
                                           }
                                           defaultOpen={false}
                                           isLoading={message.reviewTableGenerationLoadingState?.isLoading}
-                                          icon={FileSpreadsheet}
+                                          icon={Table2}
                                         />
                                         
                                         {/* Review Table Message - show after generation completes */}

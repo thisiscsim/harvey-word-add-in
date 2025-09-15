@@ -208,50 +208,50 @@ export default function ThinkingState({
               </span>
             )
           ) : (
-            // Parent states have tooltips
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {isLoading ? (
-                  <div>
-                    <TextShimmer 
-                      duration={1.5} 
-                      spread={3}
-                    >
-                      {headerLabel}
-                    </TextShimmer>
-                  </div>
-                ) : (
+            // Parent states - only show tooltip when not loading
+            isLoading ? (
+              <div>
+                <TextShimmer 
+                  duration={1.5} 
+                  spread={3}
+                >
+                  {headerLabel}
+                </TextShimmer>
+              </div>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <span className="font-medium truncate inline-block">
                     {headerLabel}
                   </span>
-                )}
-              </TooltipTrigger>
-              <TooltipContent 
-                side="right" 
-                align="center"
-                sideOffset={8}
-                className="bg-white border border-neutral-200 text-neutral-700 px-3 py-2 shadow-xs"
-              >
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between gap-8">
-                  <span className="text-neutral-600">Model:</span>
-                  <span className="text-neutral-900">{timingData.model}</span>
-                </div>
-                <div className="flex justify-between gap-8">
-                  <span className="text-neutral-600">Date:</span>
-                  <span className="text-neutral-900">{timingData.date}</span>
-                </div>
-                <div className="flex justify-between gap-8">
-                  <span className="text-neutral-600">Timestamp:</span>
-                  <span className="text-neutral-900">{timingData.timestamp}</span>
-                </div>
-                <div className="flex justify-between gap-8">
-                  <span className="text-neutral-600">Response time:</span>
-                  <span className="text-neutral-900">{timingData.responseTime}</span>
-                </div>
-              </div>
-              </TooltipContent>
-            </Tooltip>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="right" 
+                  align="center"
+                  sideOffset={8}
+                  className="bg-white border border-neutral-200 text-neutral-700 px-3 py-2 shadow-xs"
+                >
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between gap-8">
+                      <span className="text-neutral-600">Model:</span>
+                      <span className="text-neutral-900">{timingData.model}</span>
+                    </div>
+                    <div className="flex justify-between gap-8">
+                      <span className="text-neutral-600">Date:</span>
+                      <span className="text-neutral-900">{timingData.date}</span>
+                    </div>
+                    <div className="flex justify-between gap-8">
+                      <span className="text-neutral-600">Timestamp:</span>
+                      <span className="text-neutral-900">{timingData.timestamp}</span>
+                    </div>
+                    <div className="flex justify-between gap-8">
+                      <span className="text-neutral-600">Response time:</span>
+                      <span className="text-neutral-900">{timingData.responseTime}</span>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            )
           )}
         </div>
       </button>
