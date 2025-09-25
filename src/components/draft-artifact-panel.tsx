@@ -56,8 +56,8 @@ interface DraftArtifactPanelProps {
   isDeepResearchActive: boolean;
   onDeepResearchActiveChange: (active: boolean) => void;
   scrollToBottom: () => void;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
-  chatContainerRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  chatContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const PANEL_ANIMATION = {
