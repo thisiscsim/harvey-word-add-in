@@ -1,8 +1,6 @@
 "use client";
 
 import { 
-  ChevronsLeft, 
-  ChevronsRight, 
   Bold, 
   Italic, 
   Strikethrough, 
@@ -29,13 +27,11 @@ import {
 import { Editor } from '@tiptap/react';
 
 interface DraftDocumentToolbarProps {
-  chatOpen: boolean;
-  onToggleChat: () => void;
-  onCloseArtifact?: () => void;
   editor: Editor | null;
+  onToggleChat: () => void;
 }
 
-export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseArtifact, editor }: DraftDocumentToolbarProps) {
+export default function DraftDocumentToolbar({ editor, onToggleChat }: DraftDocumentToolbarProps) {
   if (!editor) {
     return null;
   }
@@ -83,28 +79,6 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
     <TooltipProvider>
       <div className="px-3 py-2 border-b border-neutral-200 bg-white flex items-center justify-between" style={{ minHeight: '52px' }}>
         <div className="flex items-center gap-1">
-          {/* Toggle Chat Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={onToggleChat}
-                className="p-2 rounded-md transition-colors hover:bg-neutral-100 text-neutral-600"
-              >
-                {chatOpen ? (
-                  <ChevronsLeft size={16} />
-                ) : (
-                  <ChevronsRight size={16} />
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{chatOpen ? "Hide assistant" : "Show assistant"}</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          {/* Separator */}
-          <div className="w-px bg-neutral-200" style={{ height: '20px' }}></div>
-          
           {/* Text Formatting Options */}
           <div className="flex items-center gap-1">
             {/* Bold */}
@@ -396,28 +370,17 @@ export default function DraftDocumentToolbar({ chatOpen, onToggleChat, onCloseAr
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Close button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={chatOpen ? onCloseArtifact : undefined}
-                disabled={!chatOpen}
-                className={`p-2 rounded-md transition-colors ${
-                  chatOpen 
-                    ? 'hover:bg-neutral-100 text-neutral-600' 
-                    : 'text-neutral-300 cursor-not-allowed'
-                }`}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6L6 18"/>
-                  <path d="M6 6l12 12"/>
-                </svg>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{chatOpen ? "Close" : "Open assistant to close artifact"}</p>
-            </TooltipContent>
-          </Tooltip>
+          {/* Harvey Logo Button */}
+          <button 
+            onClick={onToggleChat}
+            className="flex items-center gap-2 p-2 rounded-md transition-all hover:bg-neutral-100 text-neutral-700 hover:text-neutral-900"
+          >
+            <svg width="20" height="20" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="640" height="640" fill="#0F0E0D"/>
+              <path d="M510 490H340L390 440.002V350.001H250V440.002L300 490H130L180 440.002V200.002L130 150H300L250 200.002V290.001H390V200.002L340 150H510L460 200.002V440.002L510 490Z" fill="#FAFAF9"/>
+            </svg>
+            <span className="text-sm font-medium">Harvey for Word</span>
+          </button>
         </div>
       </div>
     </TooltipProvider>

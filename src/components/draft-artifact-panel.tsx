@@ -1,13 +1,21 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { UserPlus, Download } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { 
+  ChevronRight, 
+  Share, 
+  Plus, 
+  ListPlus, 
+  Settings2, 
+  Wand, 
+  Orbit
+} from "lucide-react";
+import Image from "next/image";
+import { Spinner } from "@/components/ui/spinner";
 import DraftDocumentToolbar from "@/components/draft-document-toolbar";
-import ShareArtifactDialog from "@/components/share-artifact-dialog";
-import ExportReviewDialog from "@/components/export-review-dialog";
+import ThinkingState from "@/components/thinking-state";
+import ArtifactCard from "@/components/artifact-card";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -15,23 +23,41 @@ import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  type: 'text' | 'artifact';
+  thinkingContent?: { summary: string; bullets: string[]; additionalText?: string };
+  loadingState?: { showSummary: boolean; visibleBullets: number; showAdditionalText: boolean };
+  isLoading?: boolean;
+  artifactData?: {
+    title: string;
+    subtitle: string;
+    variant: 'draft' | 'table';
+  };
+}
+
 interface DraftArtifactPanelProps {
   selectedArtifact: { title: string; subtitle: string } | null;
-  isEditingArtifactTitle: boolean;
-  editedArtifactTitle: string;
-  onEditedArtifactTitleChange: (value: string) => void;
-  onStartEditingTitle: () => void;
-  onSaveTitle: () => void;
-  onClose: () => void;
   chatOpen: boolean;
   onToggleChat: (open: boolean) => void;
-  shareArtifactDialogOpen: boolean;
-  onShareArtifactDialogOpenChange: (open: boolean) => void;
-  exportReviewDialogOpen: boolean;
-  onExportReviewDialogOpenChange: (open: boolean) => void;
-  artifactTitleInputRef: React.RefObject<HTMLInputElement | null>;
-  sourcesDrawerOpen?: boolean;
-  onSourcesDrawerOpenChange?: (open: boolean) => void;
+  // Chat props
+  messages: Message[];
+  inputValue: string;
+  onInputValueChange: (value: string) => void;
+  isLoading: boolean;
+  onSendMessage: (messageOverride?: string) => void;
+  chatWidth: number;
+  onChatWidthChange: (width: number) => void;
+  isResizing: boolean;
+  onResizingChange: (resizing: boolean) => void;
+  onShareThreadDialogOpenChange: (open: boolean) => void;
+  onFileManagementOpenChange: (open: boolean) => void;
+  isDeepResearchActive: boolean;
+  onDeepResearchActiveChange: (active: boolean) => void;
+  scrollToBottom: () => void;
+  messagesEndRef: React.RefObject<HTMLDivElement>;
+  chatContainerRef: React.RefObject<HTMLDivElement>;
 }
 
 const PANEL_ANIMATION = {
@@ -41,24 +67,60 @@ const PANEL_ANIMATION = {
 
 export default function DraftArtifactPanel({
   selectedArtifact,
-  isEditingArtifactTitle,
-  editedArtifactTitle,
-  onEditedArtifactTitleChange,
-  onStartEditingTitle,
-  onSaveTitle,
-  onClose,
   chatOpen,
   onToggleChat,
-  shareArtifactDialogOpen,
-  onShareArtifactDialogOpenChange,
-  exportReviewDialogOpen,
-  onExportReviewDialogOpenChange,
-  artifactTitleInputRef,
-  sourcesDrawerOpen,
-  onSourcesDrawerOpenChange
+  messages,
+  inputValue,
+  onInputValueChange,
+  isLoading,
+  onSendMessage,
+  chatWidth,
+  onChatWidthChange,
+  isResizing,
+  onResizingChange,
+  onShareThreadDialogOpenChange,
+  onFileManagementOpenChange,
+  isDeepResearchActive,
+  onDeepResearchActiveChange,
+  scrollToBottom,
+  messagesEndRef,
+  chatContainerRef
 }: DraftArtifactPanelProps) {
   // State to force re-renders on selection change
   const [, forceUpdate] = useState({});
+  const [isHoveringResizer, setIsHoveringResizer] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Handle mouse move for resizing
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing || !containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    // Calculate chat width from the mouse position
+    let newChatWidth = containerRect.right - e.clientX;
+    
+    // Enforce min/max constraints
+    const MIN_CHAT_WIDTH = 400;
+    const MAX_CHAT_WIDTH = 800;
+    newChatWidth = Math.max(MIN_CHAT_WIDTH, Math.min(newChatWidth, MAX_CHAT_WIDTH));
+    onChatWidthChange(newChatWidth);
+  }, [isResizing, onChatWidthChange]);
+
+  const handleMouseUp = useCallback(() => {
+    onResizingChange(false);
+  }, [onResizingChange]);
+
+  // Mouse event listeners
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
 
   // Determine content based on artifact type
   const getInitialContent = () => {
@@ -452,128 +514,319 @@ export default function DraftArtifactPanel({
         className="flex-1 flex flex-col bg-neutral-50 overflow-hidden"
       >
         {/* Header */}
-        <div className="px-3 py-4 border-b border-neutral-200 bg-neutral-0 flex items-center justify-between" style={{ height: '52px' }}>
-          <div className="flex items-center">
-            {/* Editable Artifact Title */}
-            {isEditingArtifactTitle ? (
-              <input
-                ref={artifactTitleInputRef}
-                type="text"
-                value={editedArtifactTitle}
-                onChange={(e) => onEditedArtifactTitleChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    onSaveTitle();
-                  }
-                }}
-                onFocus={(e) => {
-                  // Move cursor to start and scroll to beginning
-                  setTimeout(() => {
-                    e.target.setSelectionRange(0, 0);
-                    e.target.scrollLeft = 0;
-                  }, 0);
-                }}
-                className="text-neutral-900 font-medium bg-neutral-100 border border-neutral-400 outline-none px-2 py-1.5 -ml-1 rounded-md text-sm"
-                style={{ 
-                  width: `${Math.min(Math.max(editedArtifactTitle.length * 8 + 40, 120), 600)}px`,
-                  height: '32px'
-                }}
-                autoFocus
-              />
-            ) : (
-              <button
-                onClick={onStartEditingTitle}
-                className="text-neutral-900 font-medium px-2 py-1.5 -ml-1 rounded-md hover:bg-neutral-100 transition-colors cursor-pointer text-sm"
-                style={{ height: '32px' }}
-              >
-                {selectedArtifact?.title || 'Artifact'}
-              </button>
-            )}
-          </div>
-          
-          <div className="flex gap-2 items-center">
-            {/* Sources Button */}
-            <Button 
-              variant="secondary"
-              onClick={() => onSourcesDrawerOpenChange?.(!sourcesDrawerOpen)}
-              className={cn("gap-2", sourcesDrawerOpen && "bg-neutral-100")}
-              style={{ height: '32px' }}
-            >
-              {sourcesDrawerOpen ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M7 2C5.34315 2 4 3.34315 4 5V19C4 20.6569 5.34315 22 7 22H19C19.5523 22 20 21.5523 20 21V3C20 2.44772 19.5523 2 19 2H7ZM6 19C6 19.5523 6.44772 20 7 20H18V18H7C6.44772 18 6 18.4477 6 19Z" fill="currentColor"/>
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 19C4 20.6569 5.34315 22 7 22H19C19.5523 22 20 21.5523 20 21V3C20 2.44772 19.5523 2 19 2H7C5.34315 2 4 3.34315 4 5V19Z" />
-                  <path d="M20 17H7C5.89543 17 5 17.8954 5 19" />
-                </svg>
-              )}
-              <span>Sources</span>
-            </Button>
-            {/* Share Button */}
-            <button 
-              onClick={() => onShareArtifactDialogOpenChange(true)}
-              className="flex items-center gap-2 px-3 py-1.5 border border-neutral-200 rounded-md bg-white hover:bg-neutral-100 transition-colors text-neutral-900 text-sm font-normal" 
-              style={{ height: '32px' }}
-            >
-              <UserPlus size={16} className="text-neutral-900" />
-              <span className="text-sm font-normal">Share</span>
-            </button>
-            {/* Export Button */}
-            <button 
-              className="flex items-center gap-2 px-3 py-1.5 border border-neutral-200 rounded-md bg-white hover:bg-neutral-100 transition-colors text-neutral-900 text-sm font-normal" 
-              style={{ height: '32px' }}
-              onClick={() => onExportReviewDialogOpenChange(true)}
-            >
-              <Download size={16} className="text-neutral-900" />
-              <span className="text-sm font-normal">Export</span>
-            </button>
-          </div>
+        <div className="px-3 py-4 border-b border-neutral-200" style={{ 
+          height: '52px',
+          background: 'linear-gradient(to right, #3A63A1, #2D589B)'
+        }}>
         </div>
 
         {/* Toolbar */}
         <DraftDocumentToolbar
-          chatOpen={chatOpen}
-          onToggleChat={() => {
-            console.log('Toggle button clicked, current state:', chatOpen);
-            onToggleChat(!chatOpen);
-          }}
-          onCloseArtifact={onClose}
           editor={editor}
+          onToggleChat={() => onToggleChat(!chatOpen)}
         />
         
-        {/* Content Area */}
-        <div 
-          className="flex-1 overflow-y-auto bg-neutral-0 cursor-text"
-          onClick={(e) => {
-            // Focus the editor when clicking anywhere in the content area
-            // Only if the click target is the container itself or its direct children
-            const target = e.target as HTMLElement;
-            if (editor && !editor.isFocused && !target.closest('.ProseMirror')) {
-              editor.chain().focus('end').run();
-            }
-          }}
-        >
-          <div className="h-full flex justify-center">
-            <div className="w-full max-w-[1000px] px-8 py-10">
-              <EditorContent editor={editor} />
+        {/* Content Area with Editor and Chat Side by Side */}
+        <div ref={containerRef} className="flex-1 flex overflow-hidden">
+          {/* Editor Section */}
+          <div 
+            className="flex-1 overflow-y-auto bg-neutral-0 cursor-text"
+            onClick={(e) => {
+              // Focus the editor when clicking anywhere in the content area
+              // Only if the click target is the container itself or its direct children
+              const target = e.target as HTMLElement;
+              if (editor && !editor.isFocused && !target.closest('.ProseMirror')) {
+                editor.chain().focus('end').run();
+              }
+            }}
+          >
+            <div className="h-full flex justify-center">
+              <div className="w-full max-w-[1000px] px-8 py-10">
+                <EditorContent editor={editor} />
+              </div>
             </div>
           </div>
+
+          {/* Resizable Separator */}
+          {chatOpen && (
+            <div 
+              className="relative group"
+              onMouseEnter={() => !isResizing && setIsHoveringResizer(true)}
+              onMouseLeave={() => !isResizing && setIsHoveringResizer(false)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onResizingChange(true);
+              }}
+              style={{
+                width: (isHoveringResizer || isResizing) ? '2px' : '1px',
+                backgroundColor: (isHoveringResizer || isResizing) ? '#d4d4d4' : '#e5e5e5',
+                cursor: 'col-resize',
+                transition: isResizing ? 'none' : 'all 0.15s ease',
+                flexShrink: 0,
+              }}
+            >
+              {/* Invisible wider hit area for easier grabbing */}
+              <div 
+                className="absolute inset-y-0"
+                style={{
+                  left: '-4px',
+                  right: '-4px',
+                  cursor: 'col-resize',
+                }}
+              />
+            </div>
+          )}
+
+          {/* Chat Panel */}
+          {chatOpen && (
+            <AnimatePresence mode="wait">
+              <motion.div 
+                key="chat-panel"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: chatWidth, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{
+                  width: { duration: 0.3, ease: "easeOut" },
+                  opacity: { duration: 0.15, ease: "easeOut" }
+                }}
+                className="flex relative overflow-hidden bg-white"
+                style={{ 
+                  flexShrink: 0,
+                  width: chatWidth
+                }}
+              >
+                <div className="flex flex-col bg-white relative w-full">
+                  {/* Chat Header */}
+                  <div className="px-3 py-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '52px' }}>
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-sm font-medium text-neutral-900">Word Add-In Assistant</h2>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => onShareThreadDialogOpenChange(true)}
+                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
+                      >
+                        <Share size={16} />
+                      </button>
+                      <button
+                        onClick={() => onToggleChat(false)}
+                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Messages */}
+                  <div 
+                    ref={chatContainerRef}
+                    className="flex-1 overflow-y-auto px-6 py-6"
+                  >
+                    <div className="mx-auto" style={{ maxWidth: '740px' }}>
+                    {messages.map((message, index) => (
+                      <div key={index} className={`flex items-start space-x-1 ${index !== messages.length - 1 ? 'mb-6' : ''}`}>
+                        {/* Avatar/Icon */}
+                        <div className="flex-shrink-0">
+                          {message.role === 'user' ? (
+                            <div className="w-6 h-6 bg-white border border-neutral-200 rounded-full flex items-center justify-center">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-600">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                              </svg>
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 flex items-center justify-center">
+                              <Image src="/harvey-avatar.svg" alt="Harvey" width={24} height={24} className="w-6 h-6" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Message Content */}
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          {message.role === 'user' && (
+                            <AnimatePresence>
+                              <motion.div
+                                key="user-message"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, ease: "easeOut" }}
+                              >
+                                <div className="text-sm text-neutral-900 leading-relaxed pl-2">
+                                  {message.content}
+                                </div>
+                              </motion.div>
+                            </AnimatePresence>
+                          )}
+                          
+                          {message.role === 'assistant' && (
+                            <>
+                              {/* Show thinking states */}
+                              {message.isLoading && message.thinkingContent && message.loadingState ? (
+                                <ThinkingState
+                                  variant="draft"
+                                  title="Thinking..."
+                                  durationSeconds={undefined}
+                                  summary={message.loadingState.showSummary ? message.thinkingContent.summary : undefined}
+                                  bullets={message.thinkingContent.bullets?.slice(0, message.loadingState.visibleBullets)}
+                                  additionalText={message.loadingState.showAdditionalText ? message.thinkingContent.additionalText : undefined}
+                                  isLoading={true}
+                                />
+                              ) : message.thinkingContent ? (
+                                <ThinkingState
+                                  variant="draft"
+                                  title="Thought"
+                                  durationSeconds={6}
+                                  summary={message.thinkingContent.summary}
+                                  bullets={message.thinkingContent.bullets}
+                                  additionalText={message.thinkingContent.additionalText}
+                                  defaultOpen={false}
+                                />
+                              ) : null}
+                              
+                              {/* Show content only if not loading */}
+                              {!message.isLoading && message.content && (
+                                <AnimatePresence>
+                                  <motion.div
+                                    key="message-content"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, ease: "easeOut" }}
+                                  >
+                                    {message.type === 'artifact' ? (
+                                      <div className="space-y-3">
+                                        <div className="text-sm text-neutral-900 leading-relaxed pl-2">
+                                          {message.content}
+                                        </div>
+                                        <div className="pl-2">
+                                          <ArtifactCard
+                                            title={message.artifactData?.title || 'Artifact'}
+                                            subtitle={message.artifactData?.subtitle || ''}
+                                            variant="small"
+                                            isSelected={selectedArtifact?.title === message.artifactData?.title}
+                                            showSources={true}
+                                            onClick={() => {
+                                              // Artifact already open, just scroll
+                                              scrollToBottom();
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-sm text-neutral-900 leading-relaxed pl-2">
+                                        {message.content}
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                </AnimatePresence>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                    </div>
+                  </div>
+
+                  {/* Input Area */}
+                  <div className="px-6 pb-6 overflow-x-hidden relative z-20 bg-white">
+                    <div className="mx-auto" style={{ maxWidth: '832px' }}>
+                      <div className="pl-2 pr-3 pt-4 pb-3 transition-all duration-200 border border-transparent focus-within:border-neutral-300 bg-neutral-100 flex flex-col" style={{ borderRadius: '12px', minHeight: '160px' }}>
+                      <textarea
+                        value={inputValue}
+                        onChange={(e) => {
+                          onInputValueChange(e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = e.target.scrollHeight + 'px';
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            onSendMessage();
+                          }
+                        }}
+                        placeholder="Ask Harvey anything..."
+                        className="w-full bg-transparent focus:outline-none text-neutral-900 placeholder-neutral-500 resize-none overflow-hidden flex-1 px-2"
+                        style={{ 
+                          fontSize: '14px', 
+                          lineHeight: '20px',
+                          minHeight: '60px',
+                          maxHeight: '200px'
+                        }}
+                      />
+                      
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center">
+                          <button 
+                            onClick={() => onFileManagementOpenChange(true)}
+                            className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}
+                          >
+                            <Plus size={16} />
+                          </button>
+                          
+                          <button className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}>
+                            <ListPlus size={16} />
+                          </button>
+                          
+                          <div className="w-px bg-neutral-200" style={{ height: '20px', marginLeft: '4px', marginRight: '4px' }}></div>
+                          
+                          <button className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}>
+                            <Settings2 size={16} />
+                          </button>
+                          
+                          <button className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}>
+                            <Wand size={16} />
+                          </button>
+                        </div>
+                        
+                        <div className="flex items-center space-x-1">
+                          <button 
+                            onClick={() => onDeepResearchActiveChange(!isDeepResearchActive)}
+                            className={`flex items-center gap-1.5 h-8 px-2 transition-colors rounded-md ${
+                              isDeepResearchActive 
+                                ? 'text-[#5F3BA5] bg-[#E7E6EA]' 
+                                : 'text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200'
+                            }`}
+                          >
+                            <Orbit size={16} />
+                          </button>
+                          
+                          <button
+                            onClick={() => onSendMessage()}
+                            disabled={!inputValue.trim() || isLoading}
+                            className={`focus:outline-none flex items-center justify-center transition-all bg-neutral-900 text-white hover:bg-neutral-800 ${
+                              !inputValue.trim() || isLoading ? 'cursor-not-allowed' : ''
+                            } p-2`}
+                            style={{ 
+                              minWidth: '32px',
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '6px',
+                              opacity: !inputValue.trim() || isLoading ? 0.3 : 1
+                            }}
+                          >
+                            {isLoading ? (
+                              <div className="w-4 h-4 flex items-center justify-center">
+                                <Spinner size="sm" />
+                              </div>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          )}
         </div>
       </motion.div>
 
-      {/* Dialogs */}
-      <ShareArtifactDialog
-        isOpen={shareArtifactDialogOpen}
-        onClose={() => onShareArtifactDialogOpenChange(false)}
-        artifactTitle={selectedArtifact?.title || 'Artifact'}
-      />
-      <ExportReviewDialog
-        isOpen={exportReviewDialogOpen}
-        onClose={() => onExportReviewDialogOpenChange(false)}
-        artifactTitle={selectedArtifact?.title || 'Artifact'}
-      />
     </>
   );
 }
