@@ -90,6 +90,7 @@ export default function DraftArtifactPanel({
   // State to force re-renders on selection change
   const [, forceUpdate] = useState({});
   const [isHoveringResizer, setIsHoveringResizer] = useState(false);
+  const [autoApplySuggestions, setAutoApplySuggestions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Handle mouse move for resizing
@@ -250,8 +251,8 @@ export default function DraftArtifactPanel({
               }
             }}
           >
-            <div className="h-full flex justify-center">
-              <div className="w-full max-w-[846px] px-24 py-24 my-8 bg-white">
+            <div className="min-h-full flex justify-center">
+              <div className="w-full max-w-[846px] min-h-full bg-white my-8 px-24 py-24">
                 <EditorContent editor={editor} />
               </div>
             </div>
@@ -340,13 +341,18 @@ export default function DraftArtifactPanel({
                     </div>
                   </div>
 
-                  {/* Messages */}
-                  <div 
-                    ref={chatContainerRef}
-                    className="flex-1 overflow-y-auto px-6 py-6"
-                  >
-                    <div className="mx-auto" style={{ maxWidth: '740px' }}>
-                    {messages.map((message, index) => (
+                  {/* Messages with gradient overlays */}
+                  <div className="flex-1 relative overflow-hidden">
+                    {/* Top gradient */}
+                    <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white to-transparent pointer-events-none z-10" />
+                    
+                    {/* Scrollable messages */}
+                    <div 
+                      ref={chatContainerRef}
+                      className="h-full overflow-y-auto px-6 py-6"
+                    >
+                      <div className="mx-auto" style={{ maxWidth: '740px' }}>
+                      {messages.map((message, index) => (
                       <div key={index} className={`flex items-start space-x-1 ${index !== messages.length - 1 ? 'mb-6' : ''}`}>
                         {/* Avatar/Icon */}
                         <div className="flex-shrink-0">
@@ -450,11 +456,15 @@ export default function DraftArtifactPanel({
                     <div ref={messagesEndRef} />
                     </div>
                   </div>
+                  
+                  {/* Bottom gradient */}
+                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
+                </div>
 
                   {/* Input Area */}
                   <div className="px-6 pb-6 overflow-x-hidden relative z-20 bg-white">
                     <div className="mx-auto" style={{ maxWidth: '832px' }}>
-                      <div className="pl-2 pr-3 pt-4 pb-3 transition-all duration-200 border border-transparent focus-within:border-neutral-300 bg-neutral-100 flex flex-col" style={{ borderRadius: '12px', minHeight: '160px' }}>
+                      <div className="pl-2.5 pr-2.5 pt-4 pb-3 transition-all duration-200 border border-transparent focus-within:border-neutral-300 bg-neutral-100 flex flex-col" style={{ borderRadius: '12px', minHeight: '130px' }}>
                       <textarea
                         value={inputValue}
                         onChange={(e) => {
@@ -473,7 +483,7 @@ export default function DraftArtifactPanel({
                         style={{ 
                           fontSize: '14px', 
                           lineHeight: '20px',
-                          minHeight: '60px',
+                          minHeight: '40px',
                           maxHeight: '200px'
                         }}
                       />
@@ -539,6 +549,29 @@ export default function DraftArtifactPanel({
                             )}
                           </button>
                         </div>
+                      </div>
+                      
+                      <div className="mt-2 p-1.5 bg-white rounded-md flex items-center justify-between">
+                        <p className="text-xs text-neutral-500 ml-0.5">Auto apply suggestions</p>
+                        <button
+                          className="relative inline-flex items-center rounded-full transition-colors"
+                          style={{ 
+                            width: '26px', 
+                            height: '16px',
+                            backgroundColor: autoApplySuggestions ? '#1a1a1a' : '#e5e5e5'
+                          }}
+                          onClick={() => setAutoApplySuggestions(!autoApplySuggestions)}
+                        >
+                          <span 
+                            className="absolute rounded-full bg-white transition-transform"
+                            style={{ 
+                              width: '12px', 
+                              height: '12px',
+                              transform: autoApplySuggestions ? 'translateX(12px)' : 'translateX(2px)',
+                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                            }} 
+                          />
+                        </button>
                       </div>
                       </div>
                     </div>
