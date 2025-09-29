@@ -3,14 +3,15 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { 
-  ChevronRight, 
-  Share, 
   Plus, 
   ListPlus, 
   Settings2, 
   Wand, 
   Orbit,
-  X
+  X,
+  Clock,
+  Briefcase,
+  ArrowLeft
 } from "lucide-react";
 import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
@@ -48,6 +49,7 @@ interface DraftArtifactPanelProps {
   onInputValueChange: (value: string) => void;
   isLoading: boolean;
   onSendMessage: (messageOverride?: string) => void;
+  onBackToHome: () => void;
   chatWidth: number;
   onChatWidthChange: (width: number) => void;
   isResizing: boolean;
@@ -75,10 +77,12 @@ export default function DraftArtifactPanel({
   onInputValueChange,
   isLoading,
   onSendMessage,
+  onBackToHome,
   chatWidth,
   onChatWidthChange,
   isResizing,
   onResizingChange,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onShareThreadDialogOpenChange,
   onFileManagementOpenChange,
   isDeepResearchActive,
@@ -92,6 +96,18 @@ export default function DraftArtifactPanel({
   const [isHoveringResizer, setIsHoveringResizer] = useState(false);
   const [autoApplySuggestions, setAutoApplySuggestions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Generate conversation title from first user message
+  const getConversationTitle = () => {
+    const firstUserMessage = messages.find(m => m.role === 'user');
+    if (!firstUserMessage) return 'New Conversation';
+    
+    const maxLength = 50;
+    const content = firstUserMessage.content;
+    
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  };
 
   // Handle mouse move for resizing
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -307,52 +323,91 @@ export default function DraftArtifactPanel({
                 }}
               >
                 <div className="flex flex-col bg-white relative w-full">
-                  {/* Harvey for Word Header */}
-                  <div className="px-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '40px' }}>
+                  {/* Harvey for Word Header - Always visible */}
+                  <div className="px-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '40px', backgroundColor: '#F2F1F0' }}>
                     <div className="flex items-center">
                       <h2 className="text-sm font-medium text-neutral-900">Harvey for Word</h2>
                     </div>
                     <button
                       onClick={() => onToggleChat(false)}
-                      className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
+                      className="p-0.5 text-white hover:opacity-80 rounded-full transition-opacity"
+                      style={{ backgroundColor: '#ADAAA5' }}
                     >
                       <X size={16} />
                     </button>
                   </div>
 
-                  {/* Chat Header */}
-                  <div className="px-3 py-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '52px' }}>
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-sm font-medium text-neutral-900">Word Add-In Assistant</h2>
-                    </div>
-                    <div className="flex items-center gap-1">
+                  {/* Conditional Second Header - Home vs Messages */}
+                  {messages.length === 0 ? (
+                    /* Home Screen Header */
+                    <div className="px-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '48px', backgroundColor: '#F2F1F0' }}>
                       <button
-                        onClick={() => onShareThreadDialogOpenChange(true)}
-                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
+                        className="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
                       >
-                        <Share size={16} />
+                        <Clock size={18} />
                       </button>
                       <button
-                        onClick={() => onToggleChat(false)}
-                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
                       >
-                        <ChevronRight size={16} />
+                        <Briefcase size={16} />
+                        <span className="text-sm font-normal">Client matter</span>
+                      </button>
+                      <button
+                        className="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
+                      >
+                        <Settings2 size={18} />
                       </button>
                     </div>
-                  </div>
+                  ) : (
+                    /* Chat Header - Messages View */
+                    <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between gap-3" style={{ height: '52px' }}>
+                      <button
+                        onClick={onBackToHome}
+                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0"
+                      >
+                        <ArrowLeft size={20} />
+                      </button>
+                      <h2 className="text-sm font-medium text-neutral-900 truncate flex-1 text-center px-2">
+                        {getConversationTitle()}
+                      </h2>
+                      <button
+                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0"
+                      >
+                        <Plus size={20} />
+                      </button>
+                    </div>
+                  )}
 
-                  {/* Messages with gradient overlays */}
+                  {/* Content Area - Home Screen or Messages */}
                   <div className="flex-1 relative overflow-hidden">
-                    {/* Top gradient */}
-                    <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white to-transparent pointer-events-none z-10" />
-                    
-                    {/* Scrollable messages */}
-                    <div 
-                      ref={chatContainerRef}
-                      className="h-full overflow-y-auto px-6 py-6"
-                    >
-                      <div className="mx-auto" style={{ maxWidth: '740px' }}>
-                      {messages.map((message, index) => (
+                    {messages.length === 0 ? (
+                      /* Home Screen - Harvey Logo */
+                      <div className="h-full flex items-center justify-center">
+                        <Image 
+                          src="/Harvey_Logo.svg" 
+                          alt="Harvey" 
+                          width={106} 
+                          height={32}
+                          style={{ 
+                            height: '32px', 
+                            width: 'auto',
+                            opacity: 0.15
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      /* Messages View */
+                      <>
+                        {/* Top gradient */}
+                        <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white to-transparent pointer-events-none z-10" />
+                        
+                        {/* Scrollable messages */}
+                        <div 
+                          ref={chatContainerRef}
+                          className="h-full overflow-y-auto px-6 py-6"
+                        >
+                          <div className="mx-auto" style={{ maxWidth: '740px' }}>
+                          {messages.map((message, index) => (
                       <div key={index} className={`flex items-start space-x-1 ${index !== messages.length - 1 ? 'mb-6' : ''}`}>
                         {/* Avatar/Icon */}
                         <div className="flex-shrink-0">
@@ -452,14 +507,38 @@ export default function DraftArtifactPanel({
                           )}
                         </div>
                       </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                    </div>
+                          ))}
+                          <div ref={messagesEndRef} />
+                          </div>
+                        </div>
+                        
+                        {/* Bottom gradient */}
+                        <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
+                      </>
+                    )}
                   </div>
-                  
-                  {/* Bottom gradient */}
-                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
-                </div>
+
+                  {/* Suggestion Cards - Only shown when no messages */}
+                  {messages.length === 0 && (
+                    <div className="px-6 pb-4 overflow-x-hidden bg-white">
+                      <div className="mx-auto space-y-3" style={{ maxWidth: '832px' }}>
+                        <button 
+                          onClick={() => onSendMessage("Run playbooks to review this contract")}
+                          className="w-full text-left px-4 py-3 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                        >
+                          <div className="font-medium text-sm text-neutral-900">Run playbooks</div>
+                          <div className="text-xs text-neutral-500 mt-0.5">Review contracts with standard playbooks</div>
+                        </button>
+                        <button 
+                          onClick={() => onSendMessage("Translate this document")}
+                          className="w-full text-left px-4 py-3 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                        >
+                          <div className="font-medium text-sm text-neutral-900">Translate</div>
+                          <div className="text-xs text-neutral-500 mt-0.5">Translate document into a different language</div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Input Area */}
                   <div className="px-6 pb-6 overflow-x-hidden relative z-20 bg-white">

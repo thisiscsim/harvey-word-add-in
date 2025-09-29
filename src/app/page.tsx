@@ -49,32 +49,8 @@ const getThinkingContent = (variant: 'draft' | 'analysis' = 'draft') => {
 
 
 export default function WordAddInPage() {
-  // Pre-initialize with messages as if user typed "Draft me a document"
-  const initialUserMessage = "Draft me a document";
-  const initialMessages: Message[] = [
-    {
-      role: 'user',
-      content: initialUserMessage,
-      type: 'text'
-    },
-    {
-      role: 'assistant',
-      content: 'I\'ve created a draft document for you. You can edit and customize it using the editor on the right. The document includes standard sections and formatting that you can modify as needed.',
-      type: 'artifact',
-      thinkingContent: getThinkingContent('draft'),
-      loadingState: {
-        showSummary: true,
-        visibleBullets: 4,
-        showAdditionalText: true
-      },
-      isLoading: false,
-      artifactData: {
-        title: 'Draft Document',
-        subtitle: 'Version 1',
-        variant: 'draft'
-      }
-    }
-  ];
+  // Start with empty messages to show home screen
+  const initialMessages: Message[] = [];
 
   // State management
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -112,6 +88,12 @@ export default function WordAddInPage() {
         });
       }
     }
+  }, []);
+
+  // Handle going back to home screen
+  const handleBackToHome = useCallback(() => {
+    setMessages([]);
+    setInputValue('');
   }, []);
 
   // Handle sending messages
@@ -175,9 +157,10 @@ export default function WordAddInPage() {
       setTimeout(() => {
         currentState.showSummary = true;
         setMessages(prev => {
+          if (prev.length === 0) return prev; // Safety check
           const newMessages = [...prev];
           const lastMessage = newMessages[newMessages.length - 1];
-          if (lastMessage.role === 'assistant' && lastMessage.isLoading) {
+          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isLoading) {
             lastMessage.loadingState = { ...currentState };
           }
           return newMessages;
@@ -190,9 +173,10 @@ export default function WordAddInPage() {
         setTimeout(() => {
           currentState.visibleBullets = index + 1;
           setMessages(prev => {
+            if (prev.length === 0) return prev; // Safety check
             const newMessages = [...prev];
             const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage.role === 'assistant' && lastMessage.isLoading) {
+            if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isLoading) {
               lastMessage.loadingState = { ...currentState };
             }
             return newMessages;
@@ -204,9 +188,10 @@ export default function WordAddInPage() {
       setTimeout(() => {
         currentState.showAdditionalText = true;
         setMessages(prev => {
+          if (prev.length === 0) return prev; // Safety check
           const newMessages = [...prev];
           const lastMessage = newMessages[newMessages.length - 1];
-          if (lastMessage.role === 'assistant' && lastMessage.isLoading) {
+          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isLoading) {
             lastMessage.loadingState = { ...currentState };
           }
           return newMessages;
@@ -216,9 +201,10 @@ export default function WordAddInPage() {
       // Complete loading
       setTimeout(() => {
         setMessages(prev => {
+          if (prev.length === 0) return prev; // Safety check
           const newMessages = [...prev];
           const lastMessage = newMessages[newMessages.length - 1];
-          if (lastMessage.role === 'assistant' && lastMessage.isLoading) {
+          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isLoading) {
             lastMessage.isLoading = false;
             lastMessage.content = isDraftArtifact 
               ? "I've created a new draft document for you. You can edit and customize it in the editor."
@@ -264,6 +250,7 @@ export default function WordAddInPage() {
             onInputValueChange={setInputValue}
             isLoading={isLoading}
             onSendMessage={sendMessage}
+            onBackToHome={handleBackToHome}
             chatWidth={chatWidth}
             onChatWidthChange={setChatWidth}
             isResizing={isResizing}
