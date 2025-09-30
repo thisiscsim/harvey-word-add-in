@@ -11,19 +11,23 @@ import {
   X,
   Clock,
   Briefcase,
-  ArrowLeft
+  ArrowLeft,
+  RefreshCw
 } from "lucide-react";
-import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
 import DraftDocumentToolbar from "@/components/draft-document-toolbar";
-import ThinkingState from "@/components/thinking-state";
-import ArtifactCard from "@/components/artifact-card";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
+import { ChatPanelRouter, useChatRouter } from "@/components/chat-panel/router";
+import HomePage from "@/components/chat-panel/home-page";
+import PlaybooksPage from "@/components/chat-panel/playbooks-page";
+import PlaybookReviewPage from "@/components/chat-panel/playbook-review-page";
+import PlaybookRuleDetailPage from "@/components/chat-panel/playbook-rule-detail-page";
+import MessagesPage from "@/components/chat-panel/messages-page";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -68,7 +72,8 @@ const PANEL_ANIMATION = {
   ease: [0.4, 0.0, 0.2, 1] as const // Custom cubic-bezier for smooth acceleration
 };
 
-export default function DraftArtifactPanel({
+// Inner component that uses the router
+function DraftArtifactPanelContent({
   selectedArtifact,
   chatOpen,
   onToggleChat,
@@ -91,6 +96,8 @@ export default function DraftArtifactPanel({
   messagesEndRef,
   chatContainerRef
 }: DraftArtifactPanelProps) {
+  const router = useChatRouter();
+  
   // State to force re-renders on selection change
   const [, forceUpdate] = useState({});
   const [isHoveringResizer, setIsHoveringResizer] = useState(false);
@@ -337,14 +344,62 @@ export default function DraftArtifactPanel({
                     </button>
                   </div>
 
-                  {/* Conditional Second Header - Home vs Messages */}
-                  {messages.length === 0 ? (
-                    /* Home Screen Header */
-                    <div className="px-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '48px', backgroundColor: '#F2F1F0' }}>
+                  {/* Conditional Second Header - Based on Route */}
+                  {router.currentRoute.name === 'playbooks' ? (
+                    /* Playbooks View Header */
+                    <div className="px-2 border-b border-neutral-200 flex items-center justify-between" style={{ height: '48px' }}>
                       <button
-                        className="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
+                        onClick={() => router.goBack()}
+                        className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
                       >
-                        <Clock size={18} />
+                        <ArrowLeft size={16} />
+                      </button>
+                      <h2 className="text-sm font-medium text-neutral-900 flex-1 text-center">
+                        Playbooks
+                      </h2>
+                      <button
+                        className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
+                      >
+                        <Briefcase size={16} />
+                      </button>
+                    </div>
+                  ) : router.currentRoute.name === 'playbook-review' ? (
+                    /* Playbook Review Header */
+                    <div className="px-2 border-b border-neutral-200 flex items-center justify-between gap-3" style={{ height: '48px' }}>
+                      <button
+                        onClick={() => router.goBack()}
+                        className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0"
+                      >
+                        <ArrowLeft size={16} />
+                      </button>
+                      <h2 className="text-sm font-medium text-neutral-900 truncate flex-1 text-center">
+                        {router.currentRoute.params.playbookTitle}
+                      </h2>
+                      <div className="w-8 h-8 flex-shrink-0" />
+                    </div>
+                  ) : router.currentRoute.name === 'playbook-rule-detail' ? (
+                    /* Playbook Rule Detail Header */
+                    <div className="px-2 border-b border-neutral-200 flex items-center justify-between gap-3" style={{ height: '48px' }}>
+                      <button
+                        onClick={() => router.goBack()}
+                        className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0"
+                      >
+                        <ArrowLeft size={16} />
+                      </button>
+                      <h2 className="text-sm font-medium text-neutral-900 truncate flex-1 text-center">
+                        {router.currentRoute.params.ruleTitle}
+                      </h2>
+                      <button className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0">
+                        <RefreshCw size={16} />
+                      </button>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    /* Home Screen Header */
+                    <div className={`px-2 flex items-center justify-between ${router.currentRoute.name === 'home' ? '' : 'border-b border-neutral-200'}`} style={{ height: '48px' }}>
+                      <button
+                        className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
+                      >
+                        <Clock size={16} />
                       </button>
                       <button
                         className="flex items-center gap-2 px-3 py-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
@@ -353,194 +408,57 @@ export default function DraftArtifactPanel({
                         <span className="text-sm font-normal">Client matter</span>
                       </button>
                       <button
-                        className="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
+                        className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
                       >
-                        <Settings2 size={18} />
+                        <Settings2 size={16} />
                       </button>
                     </div>
                   ) : (
                     /* Chat Header - Messages View */
-                    <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between gap-3" style={{ height: '52px' }}>
+                    <div className="px-2 border-b border-neutral-200 flex items-center justify-between gap-3" style={{ height: '48px' }}>
                       <button
                         onClick={onBackToHome}
-                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0"
+                        className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0"
                       >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={16} />
                       </button>
-                      <h2 className="text-sm font-medium text-neutral-900 truncate flex-1 text-center px-2">
+                      <h2 className="text-sm font-medium text-neutral-900 truncate flex-1 text-center">
                         {getConversationTitle()}
                       </h2>
                       <button
-                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0"
+                        className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0"
                       >
-                        <Plus size={20} />
+                        <Plus size={16} />
                       </button>
                     </div>
                   )}
 
-                  {/* Content Area - Home Screen or Messages */}
+                  {/* Content Area - Route-based rendering */}
                   <div className="flex-1 relative overflow-hidden">
-                    {messages.length === 0 ? (
-                      /* Home Screen - Harvey Logo */
-                      <div className="h-full flex items-center justify-center">
-                        <Image 
-                          src="/Harvey_Logo.svg" 
-                          alt="Harvey" 
-                          width={106} 
-                          height={32}
-                          style={{ 
-                            height: '32px', 
-                            width: 'auto',
-                            opacity: 0.15
-                          }}
-                        />
-                      </div>
+                    {router.currentRoute.name === 'playbooks' ? (
+                      <PlaybooksPage onSendMessage={onSendMessage} />
+                    ) : router.currentRoute.name === 'playbook-review' ? (
+                      <PlaybookReviewPage 
+                        playbookTitle={router.currentRoute.params.playbookTitle} 
+                        showLoading={router.currentRoute.params.showLoading}
+                      />
+                    ) : router.currentRoute.name === 'playbook-rule-detail' ? (
+                      <PlaybookRuleDetailPage ruleId={router.currentRoute.params.ruleId} ruleTitle={router.currentRoute.params.ruleTitle} />
+                    ) : messages.length === 0 ? (
+                      <HomePage onSendMessage={onSendMessage} />
                     ) : (
-                      /* Messages View */
-                      <>
-                        {/* Top gradient */}
-                        <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white to-transparent pointer-events-none z-10" />
-                        
-                        {/* Scrollable messages */}
-                        <div 
-                          ref={chatContainerRef}
-                          className="h-full overflow-y-auto px-6 py-6"
-                        >
-                          <div className="mx-auto" style={{ maxWidth: '740px' }}>
-                          {messages.map((message, index) => (
-                      <div key={index} className={`flex items-start space-x-1 ${index !== messages.length - 1 ? 'mb-6' : ''}`}>
-                        {/* Avatar/Icon */}
-                        <div className="flex-shrink-0">
-                          {message.role === 'user' ? (
-                            <div className="w-6 h-6 bg-white border border-neutral-200 rounded-full flex items-center justify-center">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-600">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                              </svg>
-                            </div>
-                          ) : (
-                            <div className="w-6 h-6 flex items-center justify-center">
-                              <Image src="/harvey-avatar.svg" alt="Harvey" width={24} height={24} className="w-6 h-6" />
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Message Content */}
-                        <div className="flex-1 min-w-0 pt-0.5">
-                          {message.role === 'user' && (
-                            <AnimatePresence>
-                              <motion.div
-                                key="user-message"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, ease: "easeOut" }}
-                              >
-                                <div className="text-sm text-neutral-900 leading-relaxed pl-2">
-                                  {message.content}
-                                </div>
-                              </motion.div>
-                            </AnimatePresence>
-                          )}
-                          
-                          {message.role === 'assistant' && (
-                            <>
-                              {/* Show thinking states */}
-                              {message.isLoading && message.thinkingContent && message.loadingState ? (
-                                <ThinkingState
-                                  variant="draft"
-                                  title="Thinking..."
-                                  durationSeconds={undefined}
-                                  summary={message.loadingState.showSummary ? message.thinkingContent.summary : undefined}
-                                  bullets={message.thinkingContent.bullets?.slice(0, message.loadingState.visibleBullets)}
-                                  additionalText={message.loadingState.showAdditionalText ? message.thinkingContent.additionalText : undefined}
-                                  isLoading={true}
-                                />
-                              ) : message.thinkingContent ? (
-                                <ThinkingState
-                                  variant="draft"
-                                  title="Thought"
-                                  durationSeconds={6}
-                                  summary={message.thinkingContent.summary}
-                                  bullets={message.thinkingContent.bullets}
-                                  additionalText={message.thinkingContent.additionalText}
-                                  defaultOpen={false}
-                                />
-                              ) : null}
-                              
-                              {/* Show content only if not loading */}
-                              {!message.isLoading && message.content && (
-                                <AnimatePresence>
-                                  <motion.div
-                                    key="message-content"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4, ease: "easeOut" }}
-                                  >
-                                    {message.type === 'artifact' ? (
-                                      <div className="space-y-3">
-                                        <div className="text-sm text-neutral-900 leading-relaxed pl-2">
-                                          {message.content}
-                                        </div>
-                                        <div className="pl-2">
-                                          <ArtifactCard
-                                            title={message.artifactData?.title || 'Artifact'}
-                                            subtitle={message.artifactData?.subtitle || ''}
-                                            variant="small"
-                                            isSelected={selectedArtifact?.title === message.artifactData?.title}
-                                            showSources={true}
-                                            onClick={() => {
-                                              // Artifact already open, just scroll
-                                              scrollToBottom();
-                                            }}
-                                          />
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="text-sm text-neutral-900 leading-relaxed pl-2">
-                                        {message.content}
-                                      </div>
-                                    )}
-                                  </motion.div>
-                                </AnimatePresence>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                          ))}
-                          <div ref={messagesEndRef} />
-                          </div>
-                        </div>
-                        
-                        {/* Bottom gradient */}
-                        <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
-                      </>
+                      <MessagesPage
+                        messages={messages}
+                        selectedArtifact={selectedArtifact}
+                        scrollToBottom={scrollToBottom}
+                        messagesEndRef={messagesEndRef}
+                        chatContainerRef={chatContainerRef}
+                      />
                     )}
                   </div>
 
-                  {/* Suggestion Cards - Only shown when no messages */}
-                  {messages.length === 0 && (
-                    <div className="px-6 pb-4 overflow-x-hidden bg-white">
-                      <div className="mx-auto space-y-3" style={{ maxWidth: '832px' }}>
-                        <button 
-                          onClick={() => onSendMessage("Run playbooks to review this contract")}
-                          className="w-full text-left px-4 py-3 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
-                        >
-                          <div className="font-medium text-sm text-neutral-900">Run playbooks</div>
-                          <div className="text-xs text-neutral-500 mt-0.5">Review contracts with standard playbooks</div>
-                        </button>
-                        <button 
-                          onClick={() => onSendMessage("Translate this document")}
-                          className="w-full text-left px-4 py-3 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
-                        >
-                          <div className="font-medium text-sm text-neutral-900">Translate</div>
-                          <div className="text-xs text-neutral-500 mt-0.5">Translate document into a different language</div>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Input Area */}
+                  {/* Input Area - Hidden in playbooks and playbook review views */}
+                  {router.currentRoute.name !== 'playbooks' && router.currentRoute.name !== 'playbook-review' && router.currentRoute.name !== 'playbook-rule-detail' && (
                   <div className="px-6 pb-6 overflow-x-hidden relative z-20 bg-white">
                     <div className="mx-auto" style={{ maxWidth: '832px' }}>
                       <div className="pl-2.5 pr-2.5 pt-4 pb-3 transition-all duration-200 border border-transparent focus-within:border-neutral-300 bg-neutral-100 flex flex-col" style={{ borderRadius: '12px', minHeight: '130px' }}>
@@ -655,6 +573,7 @@ export default function DraftArtifactPanel({
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -663,5 +582,14 @@ export default function DraftArtifactPanel({
       </motion.div>
 
     </>
+  );
+}
+
+// Wrapper component that provides router
+export default function DraftArtifactPanel(props: DraftArtifactPanelProps) {
+  return (
+    <ChatPanelRouter>
+      <DraftArtifactPanelContent {...props} />
+    </ChatPanelRouter>
   );
 }

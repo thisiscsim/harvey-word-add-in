@@ -1,0 +1,263 @@
+import { useRef, useState } from "react";
+import { CornerDownRight, MessageSquare, X, ChevronDown, CircleCheck } from "lucide-react";
+import { useChatRouter } from "./router";
+import { Drawer } from "vaul";
+
+interface PlaybookRuleDetailPageProps {
+  ruleId: number;
+  ruleTitle: string;
+}
+
+// Sample data for the rule issues
+const SAMPLE_ISSUES = [
+  {
+    id: 1,
+    quotedText: "after obtaining such knowledge, then the Lessee shall promptly, but in no event later than seven (7) three (3) Business Days thereafter, sell or purchase.",
+    standardPosition: "Change 7 days to 3 days.",
+    fallback: "Keep payment terms as 7 days, but add 50% due upon signing and the remaining 50% due upon completion of the project.",
+  },
+  {
+    id: 2,
+    quotedText: "Unless otherwise specified herein, capitalized terms used herein (including the preamble and recitals hereto) shall have the meanings ascribed to such terms in the Definitions List attached as Annex I to the Base Indenture, dated as of...",
+    standardPosition: "Clarify that scope, deliverables, and performance standards are defined by the Definitions List.",
+    fallback: "Clarify that external documents are incorporated by reference per the rule.",
+  },
+];
+
+export default function PlaybookRuleDetailPage({ 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  ruleId, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  ruleTitle 
+}: PlaybookRuleDetailPageProps) {
+  const { goBack } = useChatRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isPlaybookRuleExpanded, setIsPlaybookRuleExpanded] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [hoveredSection, setHoveredSection] = useState<'standard' | 'fallback' | null>(null);
+
+  const summaryText = "The contract states payment terms are over 7 days, which does not match the standard position that payment should be completed within 3 business days. This creates a timing discrepancy that needs to be addressed.";
+
+  // Function to render the preview text with redline effect
+  const renderPreviewText = (issue: typeof SAMPLE_ISSUES[0], index: number) => {
+    // Only apply hover effect to the first card
+    if (index !== 0) {
+      return issue.quotedText;
+    }
+
+    if (hoveredSection === 'standard') {
+      // Show strikethrough on "seven (7) Business D" and red text on "three (3)"
+      return (
+        <>
+          after obtaining such knowledge, then the Lessee shall promptly, but in no event later than{' '}
+          <span className="line-through">seven (7)</span>{' '}
+          <span className="text-red-500">three (3)</span>{' '}
+          <span className="line-through">Business D</span>days thereafter, sell or purchase.
+        </>
+      );
+    } else if (hoveredSection === 'fallback') {
+      // For fallback, keep the original text (or customize based on fallback logic)
+      return issue.quotedText;
+    }
+
+    // Default: show original text
+    return issue.quotedText;
+  };
+
+  return (
+    <div ref={containerRef} className="h-full flex flex-col bg-white relative">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Reasoning Section */}
+        <div className="px-4 py-4 border-b border-neutral-200">
+          <h2 className="text-sm font-medium text-neutral-900">
+            Reasoning
+          </h2>
+          <p className="text-sm text-neutral-700 leading-relaxed mb-3 line-clamp-2">
+            {summaryText}
+          </p>
+          <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+            <Drawer.Trigger asChild>
+              <button className="w-full px-3 py-1.5 text-sm font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
+                View more
+              </button>
+            </Drawer.Trigger>
+            <Drawer.Portal container={containerRef.current}>
+              <Drawer.Overlay className="absolute inset-0 bg-black/40 z-40" />
+              <Drawer.Content className="bg-white flex flex-col rounded-t-[10px] h-[96%] absolute bottom-0 left-0 right-0 z-50">
+                {/* Drawer Header */}
+                <div className="relative flex items-center justify-center px-2 py-4 pb-3 border-b border-neutral-200">
+                  <Drawer.Title className="text-base font-medium text-neutral-900">
+                    Playbook details
+                  </Drawer.Title>
+                  <button 
+                    onClick={() => setIsDrawerOpen(false)}
+                    className="absolute right-2 w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Drawer Content */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                  {/* Harvey Summary */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-neutral-900 mb-2">Harvey summary</h4>
+                    <p className="text-sm text-neutral-600 leading-relaxed">
+                      The contract states payment terms are over 7 days, which does not match the standard position that confidential Information is limited to information that: (a) is or becomes publicly
+                    </p>
+                  </div>
+
+                  {/* Playbook Rule */}
+                  <div>
+                    <button
+                      onClick={() => setIsPlaybookRuleExpanded(!isPlaybookRuleExpanded)}
+                      className="flex items-center justify-between w-full mb-3"
+                    >
+                      <h4 className="text-sm font-semibold text-neutral-900">Playbook rule</h4>
+                      <ChevronDown 
+                        size={16} 
+                        className={`text-neutral-600 transition-transform ${isPlaybookRuleExpanded ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    
+                    {isPlaybookRuleExpanded && (
+                      <div className="space-y-4">
+                        {/* Standard Position */}
+                        <div>
+                          <h5 className="text-sm font-semibold text-neutral-900 mb-2">Standard position</h5>
+                          <p className="text-sm text-neutral-600 leading-relaxed">
+                            Exclusions to Confidential Information is limited to information that: (a) is or becomes publicly available through no fault of the Recipient; (b) was already lawfully in the Recipient&apos;s possession without restriction; (c) is received from a third party without breach of any obligation.
+                          </p>
+                        </div>
+
+                        {/* Fallback Positions */}
+                        <div>
+                          <h5 className="text-sm font-semibold text-neutral-900 mb-2">Fallback positions</h5>
+                          <p className="text-sm text-neutral-600 leading-relaxed">
+                            Exclusions to Confidential Information is limited to information that: (a) is or becomes publicly available through no fault of the Recipient; (b) was already lawfully in the Recipient&apos;s possession without restriction; (c) is received from a third party without breach of any obligation; (d) is independently developed by the Recipient without reference to the Discloser&apos;s information.
+                          </p>
+                        </div>
+
+                        {/* Unacceptable Positions */}
+                        <div>
+                          <h5 className="text-sm font-semibold text-neutral-900 mb-2">Unacceptable positions</h5>
+                          <p className="text-sm text-neutral-500 leading-relaxed">None</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Acceptable Guidance */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-neutral-900 mb-2">Acceptable guidance</h4>
+                    <p className="text-sm text-neutral-600 leading-relaxed">
+                      The contract states payment terms are over 7 days, which does not match the standard position that.
+                    </p>
+                  </div>
+                </div>
+              </Drawer.Content>
+            </Drawer.Portal>
+          </Drawer.Root>
+        </div>
+
+        {/* Issues List */}
+        <div className="px-4 py-4 space-y-4">
+          {SAMPLE_ISSUES.map((issue, index) => (
+            <div key={issue.id}>
+              {/* Container with quoted text, standard position, and fallback */}
+              <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
+                {/* Quoted Text */}
+                <div className="bg-neutral-50 p-3 relative max-h-[72px] overflow-hidden">
+                  <div className="flex gap-2">
+                    <CornerDownRight size={14} className="text-neutral-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-neutral-700 leading-relaxed">
+                      {renderPreviewText(issue, index)}
+                    </p>
+                  </div>
+                  {/* Gradient fade overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-neutral-50 to-transparent pointer-events-none" />
+                </div>
+
+                {/* Standard Position */}
+                <div 
+                  className={`px-3 py-3 border-t border-neutral-200 transition-colors ${
+                    index === 0 && hoveredSection === 'standard' ? 'bg-neutral-50' : ''
+                  }`}
+                  onMouseEnter={() => index === 0 && setHoveredSection('standard')}
+                  onMouseLeave={() => index === 0 && setHoveredSection(null)}
+                >
+                  <h3 className="text-xs font-semibold text-neutral-900">
+                    Standard position
+                  </h3>
+                  <p className="text-xs text-neutral-600 leading-relaxed mb-3">
+                    {issue.standardPosition}
+                  </p>
+                  <div className="flex gap-2">
+                    <button className="inline-flex items-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
+                      <CircleCheck size={12} />
+                      Apply
+                    </button>
+                    <button className="inline-flex items-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
+                      <MessageSquare size={12} />
+                      Comment
+                    </button>
+                  </div>
+                </div>
+
+                {/* Fallback */}
+                <div 
+                  className={`px-3 py-3 border-t border-neutral-200 transition-colors ${
+                    index === 0 && hoveredSection === 'fallback' ? 'bg-neutral-50' : ''
+                  }`}
+                  onMouseEnter={() => index === 0 && setHoveredSection('fallback')}
+                  onMouseLeave={() => index === 0 && setHoveredSection(null)}
+                >
+                  <h3 className="text-xs font-semibold text-neutral-900">
+                    Fallback
+                  </h3>
+                  <p className="text-xs text-neutral-600 leading-relaxed mb-3">
+                    {issue.fallback}
+                  </p>
+                  <div className="flex gap-2">
+                    <button className="inline-flex items-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
+                      <CircleCheck size={12} />
+                      Apply
+                    </button>
+                    <button className="inline-flex items-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
+                      <MessageSquare size={12} />
+                      Comment
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom Padding */}
+        <div className="h-20" />
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="sticky bottom-0 bg-white border-t border-neutral-200 px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={goBack}
+            className="px-3 py-1.5 text-sm font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors"
+          >
+            Back
+          </button>
+          <div className="flex gap-2">
+            <button className="px-3 py-1.5 text-sm font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
+              Mark reviewed
+            </button>
+            <button className="px-3 py-1.5 text-sm font-normal text-white bg-neutral-900 rounded-md hover:bg-neutral-800 transition-colors">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
