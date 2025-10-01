@@ -26,7 +26,7 @@ const SAMPLE_ISSUES = [
 
 export default function PlaybookRuleDetailPage({ 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ruleId, 
+  ruleId,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ruleTitle 
 }: PlaybookRuleDetailPageProps) {
@@ -34,30 +34,52 @@ export default function PlaybookRuleDetailPage({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaybookRuleExpanded, setIsPlaybookRuleExpanded] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [hoveredSection, setHoveredSection] = useState<'standard' | 'fallback' | null>(null);
+  const [selectedSections, setSelectedSections] = useState<Record<number, 'standard' | 'fallback' | undefined>>({});
 
   const summaryText = "The contract states payment terms are over 7 days, which does not match the standard position that payment should be completed within 3 business days. This creates a timing discrepancy that needs to be addressed.";
 
   // Function to render the preview text with redline effect
   const renderPreviewText = (issue: typeof SAMPLE_ISSUES[0], index: number) => {
-    // Only apply hover effect to the first card
-    if (index !== 0) {
-      return issue.quotedText;
+    const selected = selectedSections[index];
+
+    // First card transformations
+    if (index === 0) {
+      if (selected === 'standard') {
+        // Show strikethrough on "seven (7) Business D" and red text on "three (3)"
+        return (
+          <>
+            after obtaining such knowledge, then the Lessee shall promptly, but in no event later than{' '}
+            <span className="line-through text-red-500">seven (7)</span>{' '}
+            <span className="text-red-500">three (3)</span>{' '}
+            <span className="line-through text-red-500">Business D</span>days thereafter, sell or purchase.
+          </>
+        );
+      } else if (selected === 'fallback') {
+        // For fallback, keep the original text (or customize based on fallback logic)
+        return issue.quotedText;
+      }
     }
 
-    if (hoveredSection === 'standard') {
-      // Show strikethrough on "seven (7) Business D" and red text on "three (3)"
-      return (
-        <>
-          after obtaining such knowledge, then the Lessee shall promptly, but in no event later than{' '}
-          <span className="line-through">seven (7)</span>{' '}
-          <span className="text-red-500">three (3)</span>{' '}
-          <span className="line-through">Business D</span>days thereafter, sell or purchase.
-        </>
-      );
-    } else if (hoveredSection === 'fallback') {
-      // For fallback, keep the original text (or customize based on fallback logic)
-      return issue.quotedText;
+    // Second card transformations
+    if (index === 1) {
+      if (selected === 'standard') {
+        // Strike through and add clarification
+        return (
+          <>
+            Unless otherwise specified herein, capitalized terms used herein (including the preamble and recitals hereto) shall have the meanings ascribed to such terms in{' '}
+            <span className="text-red-500">the scope, deliverables, and performance standards defined by</span>{' '}
+            the Definitions List attached as Annex I to the Base Indenture, dated as of...
+          </>
+        );
+      } else if (selected === 'fallback') {
+        return (
+          <>
+            Unless otherwise specified herein, capitalized terms used herein (including the preamble and recitals hereto) shall have the meanings ascribed to such terms in{' '}
+            <span className="text-red-500">external documents incorporated by reference per the rule, including</span>{' '}
+            the Definitions List attached as Annex I to the Base Indenture, dated as of...
+          </>
+        );
+      }
     }
 
     // Default: show original text
@@ -168,7 +190,7 @@ export default function PlaybookRuleDetailPage({
               {/* Container with quoted text, standard position, and fallback */}
               <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
                 {/* Quoted Text */}
-                <div className="bg-neutral-50 p-3 relative max-h-[72px] overflow-hidden">
+                <div className="bg-neutral-50 m-1 p-3 relative max-h-[72px] overflow-hidden">
                   <div className="flex gap-2">
                     <CornerDownRight size={14} className="text-neutral-400 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-neutral-700 leading-relaxed">
@@ -179,54 +201,95 @@ export default function PlaybookRuleDetailPage({
                   <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-neutral-50 to-transparent pointer-events-none" />
                 </div>
 
-                {/* Standard Position */}
-                <div 
-                  className={`px-3 py-3 border-t border-neutral-200 transition-colors ${
-                    index === 0 && hoveredSection === 'standard' ? 'bg-neutral-50' : ''
-                  }`}
-                  onMouseEnter={() => index === 0 && setHoveredSection('standard')}
-                  onMouseLeave={() => index === 0 && setHoveredSection(null)}
-                >
-                  <h3 className="text-xs font-semibold text-neutral-900">
-                    Standard position
-                  </h3>
-                  <p className="text-xs text-neutral-600 leading-relaxed mb-3">
-                    {issue.standardPosition}
-                  </p>
-                  <div className="flex gap-2">
-                    <button className="inline-flex items-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
-                      <CircleCheck size={12} />
-                      Apply
-                    </button>
-                    <button className="inline-flex items-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
-                      <MessageSquare size={12} />
-                      Comment
-                    </button>
+                {/* Selection Container */}
+                <div className="p-1 border-t border-neutral-200">
+                  {/* Standard Position */}
+                  <div 
+                    className="p-2 cursor-pointer transition-colors hover:bg-neutral-50 rounded"
+                    onClick={() => {
+                      setSelectedSections(prev => ({
+                        ...prev,
+                        [index]: prev[index] === 'standard' ? undefined : 'standard'
+                      }));
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Content */}
+                      <div className="flex-1">
+                        <h3 className="text-xs font-semibold text-neutral-900">
+                          Standard position
+                        </h3>
+                        <p className="text-xs text-neutral-600 leading-relaxed">
+                          {issue.standardPosition}
+                        </p>
+                      </div>
+                      {/* Radio Button */}
+                      <div className="flex-shrink-0">
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                          selectedSections[index] === 'standard' 
+                            ? 'border-neutral-900 bg-neutral-900' 
+                            : 'border-neutral-300'
+                        }`}>
+                          {selectedSections[index] === 'standard' && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fallback */}
+                  <div 
+                    className="p-2 cursor-pointer transition-colors hover:bg-neutral-50 rounded"
+                    onClick={() => {
+                      setSelectedSections(prev => ({
+                        ...prev,
+                        [index]: prev[index] === 'fallback' ? undefined : 'fallback'
+                      }));
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Content */}
+                      <div className="flex-1">
+                        <h3 className="text-xs font-semibold text-neutral-900">
+                          Fallback
+                        </h3>
+                        <p className="text-xs text-neutral-600 leading-relaxed">
+                          {issue.fallback}
+                        </p>
+                      </div>
+                      {/* Radio Button */}
+                      <div className="flex-shrink-0">
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                          selectedSections[index] === 'fallback' 
+                            ? 'border-neutral-900 bg-neutral-900' 
+                            : 'border-neutral-300'
+                        }`}>
+                          {selectedSections[index] === 'fallback' && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Fallback */}
-                <div 
-                  className={`px-3 py-3 border-t border-neutral-200 transition-colors ${
-                    index === 0 && hoveredSection === 'fallback' ? 'bg-neutral-50' : ''
-                  }`}
-                  onMouseEnter={() => index === 0 && setHoveredSection('fallback')}
-                  onMouseLeave={() => index === 0 && setHoveredSection(null)}
-                >
-                  <h3 className="text-xs font-semibold text-neutral-900">
-                    Fallback
-                  </h3>
-                  <p className="text-xs text-neutral-600 leading-relaxed mb-3">
-                    {issue.fallback}
-                  </p>
+                {/* Global Action Buttons */}
+                <div className="p-2 border-t border-neutral-200 bg-white">
                   <div className="flex gap-2">
-                    <button className="inline-flex items-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
-                      <CircleCheck size={12} />
-                      Apply
-                    </button>
-                    <button className="inline-flex items-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-md hover:bg-neutral-100 transition-colors">
+                    <button 
+                      disabled={!selectedSections[index]}
+                      className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-neutral-900 bg-white border border-neutral-200 rounded-sm hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+                    >
                       <MessageSquare size={12} />
                       Comment
+                    </button>
+                    <button 
+                      disabled={!selectedSections[index]}
+                      className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 text-xs leading-4 font-normal text-white bg-neutral-900 rounded-sm hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
+                    >
+                      <CircleCheck size={12} />
+                      Apply
                     </button>
                   </div>
                 </div>

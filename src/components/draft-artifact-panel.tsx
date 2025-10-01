@@ -28,6 +28,7 @@ import PlaybooksPage from "@/components/chat-panel/playbooks-page";
 import PlaybookReviewPage from "@/components/chat-panel/playbook-review-page";
 import PlaybookRuleDetailPage from "@/components/chat-panel/playbook-rule-detail-page";
 import MessagesPage from "@/components/chat-panel/messages-page";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -389,9 +390,16 @@ function DraftArtifactPanelContent({
                       <h2 className="text-sm font-medium text-neutral-900 truncate flex-1 text-center">
                         {router.currentRoute.params.ruleTitle}
                       </h2>
-                      <button className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0">
-                        <RefreshCw size={16} />
-                      </button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex-shrink-0">
+                            <RefreshCw size={16} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                          <p>Re-run rule</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   ) : messages.length === 0 ? (
                     /* Home Screen Header */
