@@ -113,8 +113,8 @@ function DraftArtifactPanelContent({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Dummy client matter data
-  const suggestedClientMatters = ['CL104-T003', 'CL103-L010', 'CL108-R001', 'CL108-R012', 'CL109-E009'];
-  const allClientMatters = ['CL110-P006', 'CL111-S010', 'CL112-M015', 'CL113-K020'];
+  const suggestedClientMatters = ['CL104-T003', 'CL103-L010', 'CL108-R001'];
+  const allClientMatters = ['CL108-R012', 'CL109-E009', 'CL110-P006', 'CL111-S010', 'CL112-M015', 'CL113-K020'];
 
   // Filter client matters based on search
   const filteredSuggestions = suggestedClientMatters.filter(matter =>
@@ -447,8 +447,8 @@ function DraftArtifactPanelContent({
                             </span>
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-[280px] p-0" align="center">
-                          <div className="px-4 pt-4 pb-3 border-b border-neutral-200">
+                        <DropdownMenuContent className="w-[280px] p-0 max-h-[352px] flex flex-col" align="center">
+                          <div className="px-3 pt-2 pb-2 border-b border-neutral-200 flex-shrink-0">
                             <input
                               type="text"
                               placeholder="Create or find client matter"
@@ -460,11 +460,11 @@ function DraftArtifactPanelContent({
                           </div>
 
                           {(filteredSuggestions.length > 0 || filteredAll.length > 0) ? (
-                            <div className="px-2 py-4">
+                            <div className="px-1 pt-3 pb-1 overflow-y-auto">
                               {filteredSuggestions.length > 0 && (
-                                <div className="mb-4">
+                                <div className="mb-2">
                                   <h3 className="text-xs font-medium text-neutral-500 mb-2 px-2">Suggestions</h3>
-                                  <div className="space-y-1">
+                                  <div className="space-y-0.5">
                                     {filteredSuggestions.map((matter) => (
                                       <button
                                         key={matter}
@@ -473,7 +473,7 @@ function DraftArtifactPanelContent({
                                           setIsClientMatterOpen(false);
                                           setClientMatterSearch('');
                                         }}
-                                        className="w-full text-left p-2 text-sm font-normal text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors"
+                                        className="w-full text-left p-2 text-sm font-normal text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
                                       >
                                         {matter}
                                       </button>
@@ -485,7 +485,7 @@ function DraftArtifactPanelContent({
                               {filteredAll.length > 0 && (
                                 <div>
                                   <h3 className="text-xs font-medium text-neutral-500 mb-2 px-2">All</h3>
-                                  <div className="space-y-1">
+                                  <div className="space-y-0.5">
                                     {filteredAll.map((matter) => (
                                       <button
                                         key={matter}
@@ -494,7 +494,7 @@ function DraftArtifactPanelContent({
                                           setIsClientMatterOpen(false);
                                           setClientMatterSearch('');
                                         }}
-                                        className="w-full text-left p-2 text-sm font-normal text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors"
+                                        className="w-full text-left p-2 text-sm font-normal text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
                                       >
                                         {matter}
                                       </button>
@@ -504,7 +504,7 @@ function DraftArtifactPanelContent({
                               )}
                             </div>
                           ) : clientMatterSearch ? (
-                            <div className="px-2 py-4 text-sm text-neutral-500">
+                            <div className="px-1 py-4 text-sm text-neutral-500 overflow-y-auto">
                               No client matters found
                             </div>
                           ) : null}
