@@ -29,6 +29,11 @@ import PlaybookReviewPage from "@/components/chat-panel/playbook-review-page";
 import PlaybookRuleDetailPage from "@/components/chat-panel/playbook-rule-detail-page";
 import MessagesPage from "@/components/chat-panel/messages-page";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -102,8 +107,22 @@ function DraftArtifactPanelContent({
   // State to force re-renders on selection change
   const [, forceUpdate] = useState({});
   const [isHoveringResizer, setIsHoveringResizer] = useState(false);
-  const [autoApplySuggestions, setAutoApplySuggestions] = useState(false);
+  const [isClientMatterOpen, setIsClientMatterOpen] = useState(false);
+  const [selectedClientMatter, setSelectedClientMatter] = useState<string | null>(null);
+  const [clientMatterSearch, setClientMatterSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dummy client matter data
+  const suggestedClientMatters = ['CL104-T003', 'CL103-L010', 'CL108-R001', 'CL108-R012', 'CL109-E009'];
+  const allClientMatters = ['CL110-P006', 'CL111-S010', 'CL112-M015', 'CL113-K020'];
+
+  // Filter client matters based on search
+  const filteredSuggestions = suggestedClientMatters.filter(matter =>
+    matter.toLowerCase().includes(clientMatterSearch.toLowerCase())
+  );
+  const filteredAll = allClientMatters.filter(matter =>
+    matter.toLowerCase().includes(clientMatterSearch.toLowerCase())
+  );
 
   // Generate conversation title from first user message
   const getConversationTitle = () => {
@@ -403,18 +422,95 @@ function DraftArtifactPanelContent({
                     </div>
                   ) : messages.length === 0 ? (
                     /* Home Screen Header */
-                    <div className={`px-2 flex items-center justify-between ${router.currentRoute.name === 'home' ? '' : 'border-b border-neutral-200'}`} style={{ height: '48px' }}>
+                    <div className={`px-2 flex items-center justify-between relative ${router.currentRoute.name === 'home' ? '' : 'border-b border-neutral-200'}`} style={{ height: '48px' }}>
                       <button
                         className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
                       >
                         <Clock size={16} />
                       </button>
-                      <button
-                        className="flex items-center gap-2 px-3 py-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
-                      >
-                        <Briefcase size={16} />
-                        <span className="text-sm font-normal">Client matter</span>
-                      </button>
+                      
+                      <DropdownMenu open={isClientMatterOpen} onOpenChange={(open) => {
+                        setIsClientMatterOpen(open);
+                        if (!open) setClientMatterSearch('');
+                      }}>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors ${
+                              isClientMatterOpen
+                                ? 'text-neutral-900 bg-neutral-200/50'
+                                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50'
+                            }`}
+                          >
+                            <Briefcase size={16} />
+                            <span className="text-sm font-normal">
+                              {selectedClientMatter || 'Client matter'}
+                            </span>
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[280px] p-0" align="center">
+                          <div className="px-4 pt-4 pb-3 border-b border-neutral-200">
+                            <input
+                              type="text"
+                              placeholder="Create or find client matter"
+                              value={clientMatterSearch}
+                              onChange={(e) => setClientMatterSearch(e.target.value)}
+                              className="w-full text-sm text-neutral-900 placeholder:text-neutral-400 bg-transparent border-0 outline-none p-0"
+                              autoFocus
+                            />
+                          </div>
+
+                          {(filteredSuggestions.length > 0 || filteredAll.length > 0) ? (
+                            <div className="px-2 py-4">
+                              {filteredSuggestions.length > 0 && (
+                                <div className="mb-4">
+                                  <h3 className="text-xs font-medium text-neutral-500 mb-2 px-2">Suggestions</h3>
+                                  <div className="space-y-1">
+                                    {filteredSuggestions.map((matter) => (
+                                      <button
+                                        key={matter}
+                                        onClick={() => {
+                                          setSelectedClientMatter(matter);
+                                          setIsClientMatterOpen(false);
+                                          setClientMatterSearch('');
+                                        }}
+                                        className="w-full text-left p-2 text-sm font-normal text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors"
+                                      >
+                                        {matter}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {filteredAll.length > 0 && (
+                                <div>
+                                  <h3 className="text-xs font-medium text-neutral-500 mb-2 px-2">All</h3>
+                                  <div className="space-y-1">
+                                    {filteredAll.map((matter) => (
+                                      <button
+                                        key={matter}
+                                        onClick={() => {
+                                          setSelectedClientMatter(matter);
+                                          setIsClientMatterOpen(false);
+                                          setClientMatterSearch('');
+                                        }}
+                                        className="w-full text-left p-2 text-sm font-normal text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors"
+                                      >
+                                        {matter}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : clientMatterSearch ? (
+                            <div className="px-2 py-4 text-sm text-neutral-500">
+                              No client matters found
+                            </div>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      
                       <button
                         className="w-8 h-8 flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50 rounded-md transition-colors"
                       >
@@ -509,10 +605,6 @@ function DraftArtifactPanelContent({
                           <div className="w-px bg-neutral-200" style={{ height: '20px', marginLeft: '4px', marginRight: '4px' }}></div>
                           
                           <button className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}>
-                            <Settings2 size={16} />
-                          </button>
-                          
-                          <button className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}>
                             <Wand size={16} />
                           </button>
                         </div>
@@ -554,29 +646,6 @@ function DraftArtifactPanelContent({
                             )}
                           </button>
                         </div>
-                      </div>
-                      
-                      <div className="mt-2 p-1.5 bg-white rounded-md flex items-center justify-between">
-                        <p className="text-xs text-neutral-500 ml-0.5">Auto apply suggestions</p>
-                        <button
-                          className="relative inline-flex items-center rounded-full transition-colors"
-                          style={{ 
-                            width: '26px', 
-                            height: '16px',
-                            backgroundColor: autoApplySuggestions ? '#1a1a1a' : '#e5e5e5'
-                          }}
-                          onClick={() => setAutoApplySuggestions(!autoApplySuggestions)}
-                        >
-                          <span 
-                            className="absolute rounded-full bg-white transition-transform"
-                            style={{ 
-                              width: '12px', 
-                              height: '12px',
-                              transform: autoApplySuggestions ? 'translateX(12px)' : 'translateX(2px)',
-                              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                            }} 
-                          />
-                        </button>
                       </div>
                       </div>
                     </div>
