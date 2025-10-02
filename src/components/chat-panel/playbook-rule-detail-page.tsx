@@ -309,7 +309,7 @@ export default function PlaybookRuleDetailPage({
                     </div>
                   ) : (
                     <div 
-                      className={`m-1 p-3 relative max-h-[72px] overflow-hidden ${isApplied ? 'bg-white' : 'bg-neutral-50'} ${!isApplied && selectedSections[index] !== undefined && editingIssue !== index ? 'cursor-pointer hover:bg-neutral-100 hover:outline-1 hover:outline-neutral-200' : ''} transition-all rounded`}
+                      className={`m-1 p-3 relative overflow-hidden ${isApplied ? 'bg-white' : 'bg-neutral-50'} ${!isApplied && selectedSections[index] !== undefined && editingIssue !== index ? 'cursor-pointer hover:bg-neutral-100 hover:outline-1 hover:outline-neutral-200' : ''} transition-all rounded`}
                       onClick={() => {
                         if (!isApplied && editingIssue !== index && selectedSections[index] !== undefined) {
                           handleStartEdit(index);

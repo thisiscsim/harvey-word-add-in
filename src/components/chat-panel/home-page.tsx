@@ -26,7 +26,7 @@ export default function HomePage({ onSendMessage }: HomePageProps) {
       </div>
 
       {/* Suggestion Cards */}
-      <div className="px-6 pb-4 overflow-x-hidden bg-white">
+      <div className="px-4 pb-4 overflow-x-hidden bg-white">
         <div className="mx-auto space-y-3" style={{ maxWidth: '832px' }}>
           <button 
             onClick={() => router.navigate({ name: 'playbooks', params: { tab: 'all' } })}

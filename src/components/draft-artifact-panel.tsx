@@ -34,6 +34,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import FileManagementDialog from "@/components/file-management-dialog";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -65,7 +66,6 @@ interface DraftArtifactPanelProps {
   isResizing: boolean;
   onResizingChange: (resizing: boolean) => void;
   onShareThreadDialogOpenChange: (open: boolean) => void;
-  onFileManagementOpenChange: (open: boolean) => void;
   isDeepResearchActive: boolean;
   onDeepResearchActiveChange: (active: boolean) => void;
   scrollToBottom: () => void;
@@ -95,7 +95,6 @@ function DraftArtifactPanelContent({
   onResizingChange,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onShareThreadDialogOpenChange,
-  onFileManagementOpenChange,
   isDeepResearchActive,
   onDeepResearchActiveChange,
   scrollToBottom,
@@ -110,7 +109,9 @@ function DraftArtifactPanelContent({
   const [isClientMatterOpen, setIsClientMatterOpen] = useState(false);
   const [selectedClientMatter, setSelectedClientMatter] = useState<string | null>(null);
   const [clientMatterSearch, setClientMatterSearch] = useState('');
+  const [isFileManagementOpen, setIsFileManagementOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const chatPanelRef = useRef<HTMLDivElement>(null);
 
   // Dummy client matter data
   const suggestedClientMatters = ['CL104-T003', 'CL103-L010', 'CL108-R001'];
@@ -349,7 +350,7 @@ function DraftArtifactPanelContent({
                   width: chatWidth
                 }}
               >
-                <div className="flex flex-col bg-white relative w-full">
+                <div ref={chatPanelRef} className="flex flex-col bg-white relative w-full">
                   {/* Harvey for Word Header - Always visible */}
                   <div className="px-4 border-b border-neutral-200 flex items-center justify-between" style={{ height: '40px', backgroundColor: '#F2F1F0' }}>
                     <div className="flex items-center">
@@ -563,7 +564,7 @@ function DraftArtifactPanelContent({
 
                   {/* Input Area - Hidden in playbooks and playbook review views */}
                   {router.currentRoute.name !== 'playbooks' && router.currentRoute.name !== 'playbook-review' && router.currentRoute.name !== 'playbook-rule-detail' && (
-                  <div className="px-6 pb-6 overflow-x-hidden relative z-20 bg-white">
+                  <div className="px-4 pb-4 overflow-x-hidden relative z-20 bg-white">
                     <div className="mx-auto" style={{ maxWidth: '832px' }}>
                       <div className="pl-2.5 pr-2.5 pt-4 pb-3 transition-all duration-200 border border-transparent focus-within:border-neutral-300 bg-neutral-100 flex flex-col" style={{ borderRadius: '12px', minHeight: '130px' }}>
                       <textarea
@@ -592,7 +593,7 @@ function DraftArtifactPanelContent({
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center">
                           <button 
-                            onClick={() => onFileManagementOpenChange(true)}
+                            onClick={() => setIsFileManagementOpen(true)}
                             className={`flex items-center gap-1.5 h-8 px-2 text-neutral-600 hover:text-neutral-800 hover:bg-neutral-200 rounded-md transition-colors`}
                           >
                             <Plus size={16} />
@@ -651,6 +652,13 @@ function DraftArtifactPanelContent({
                     </div>
                   </div>
                   )}
+
+                  {/* File Management Drawer */}
+                  <FileManagementDialog
+                    isOpen={isFileManagementOpen}
+                    onClose={() => setIsFileManagementOpen(false)}
+                    containerRef={chatPanelRef}
+                  />
                 </div>
               </motion.div>
             </AnimatePresence>

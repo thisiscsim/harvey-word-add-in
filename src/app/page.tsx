@@ -4,7 +4,6 @@ import { useState, useRef, useCallback } from "react";
 import DraftArtifactPanel from "@/components/draft-artifact-panel";
 import ShareThreadDialog from "@/components/share-thread-dialog";
 import SourcesDrawer from "@/components/sources-drawer";
-import FileManagementDialog from "@/components/file-management-dialog";
 import { detectArtifactType } from "@/lib/artifact-detection";
 
 interface Message {
@@ -67,7 +66,6 @@ export default function WordAddInPage() {
     subtitle: 'Version 1'
   });
   const [isDeepResearchActive, setIsDeepResearchActive] = useState(false);
-  const [isFileManagementOpen, setIsFileManagementOpen] = useState(false);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -256,7 +254,6 @@ export default function WordAddInPage() {
             isResizing={isResizing}
             onResizingChange={setIsResizing}
             onShareThreadDialogOpenChange={setShareThreadDialogOpen}
-            onFileManagementOpenChange={setIsFileManagementOpen}
             isDeepResearchActive={isDeepResearchActive}
             onDeepResearchActiveChange={setIsDeepResearchActive}
             scrollToBottom={scrollToBottom}
@@ -277,11 +274,6 @@ export default function WordAddInPage() {
     <SourcesDrawer 
       isOpen={sourcesDrawerOpen} 
       onClose={() => setSourcesDrawerOpen(false)} 
-    />
-    
-    <FileManagementDialog 
-      isOpen={isFileManagementOpen} 
-      onClose={() => setIsFileManagementOpen(false)} 
     />
     </>
   );
